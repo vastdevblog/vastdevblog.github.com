@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Vast Development Blog]]></title>
+  <link href="http://vast.com/vastdevblog/atom.xml" rel="self"/>
+  <link href="http://vast.com/vastdevblog/"/>
+  <updated>2012-02-14T09:28:45-06:00</updated>
+  <id>http://vast.com/vastdevblog/</id>
+  <author>
+    <name><![CDATA[vast.com]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Rotating to show different iOS views]]></title>
+    <link href="http://vast.com/vastdevblog/blog/2012/02/12/rotating-to-show-different-ios-views/"/>
+    <updated>2012-02-12T20:11:00-06:00</updated>
+    <id>http://vast.com/vastdevblog/blog/2012/02/12/rotating-to-show-different-ios-views</id>
+    <content type="html"><![CDATA[<p>In the tradition of explaining fairly simple things at great length this approach is based on the documentation from Apple describing <a href="https://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/RespondingtoDeviceOrientationChanges/RespondingtoDeviceOrientationChanges.html#//apple_ref/doc/uid/TP40007457-CH7-SW1">Creating an Alternate Landscape Interface</a> and various answers on <a href="http://stackoverflow.com/">stackoverflow</a>. It differs from the information I could find on the internet because the flow includes a navigation controller and uses a storyboard. The flow between the screens in the interface is shown in the diagram below.</p>
+
+<p><img src="http://vast.com/vastdevblog/images/2012-02-12-ios-views.png" alt="Flow" /></p>
+
+<p>There is a first screen, A, that has two alternate views, one portrait and one landscape. These can&#8217;t be created using the springs and struts layout tools. Rotating the  phone while screen A is showing should switch between the two views. Tapping some element on screen A, in either view, transitions to screen B. Screen B handles rotation itself by redrawing its interface in drawRect:. Going back from B should show the correct version of A. There&#8217;s a navigation controller wrapping the whole interface that provides the navigation bar and button in view B to go back to view A.</p>
+
+<!-- more -->
+
+
+<p>The implementation uses the navigation controller&#8217;s pushViewController:animated: and popViewControllerAnimated: methods to display the portrait and landscape views. There is a single parent class, AViewController, containing common functionality, with two subclasses, APortraitViewController and ALandscapeViewController. XCode can be used to layout the different portrait and landscape views. The initial state is in portrait orientation (applications always start in portrait orientation and are sent rotation messages if required) so the root view controller for the navigation controller is APortraitViewController. When the orientation changes to landscape ALandscapeViewController is pushed and when it changes back to portrait ALandscapeViewController is popped. APortrait is never removed it&#8217;s just hidden by ALandscape.</p>
+
+<p><img src="http://vast.com/vastdevblog/images/2012-02-12-ios-views-nav.png" alt="Push and Pop" /></p>
+
+<p>Before looking at the code to push and pop the views we have to  consider how to deal with view B, and what the storyboard looks like. View B presents some problems because you can get get to view B from the landscape version of view A. While showing view B you can rotate to portrait, and press the back button, at which point you need to go back to A. At this point you want the APortrait view shown. This is the path, 1, 2, 3, 4 in the diagram below.</p>
+
+<p><img src="http://vast.com/vastdevblog/images/2012-02-12-ios-views-rotate.png" alt="Rotating in view B" /></p>
+
+<p>The solution to this is quite simple. At appropriate times, to be described below, check whether the portrait view is being show in landscape orientation, or the landscape view in portrait orientation and perform the appropriate push or pop.</p>
+
+<p>Finally, the last thing before the code, the picture below shows how the storyboard laid out.</p>
+
+<p><img src="http://vast.com/vastdevblog/images/2012-02-12-ios-views-storyboard.png" alt="Storyboard layout" /></p>
+
+<p>The ALandscape view controller is not connected to APortrait. It&#8217;s given an identifier that&#8217;s used to load it from code. Both APortrait and ALandscape use push segues to go to B.</p>
+
+<p>Here&#8217;s the code that swaps the portrait and landscape versions of the A view controller. It&#8217;s in the APortraitViewController class, because an instance of that class is always in memory, so self refers to APortraitViewController. Instances of the ALandscapeViewController are created as needed for pushing and then destroyed when they are popped. It&#8217;s important to set the model and any other properties for the landscape instance each time one is created.</p>
+
+<figure class='code'><figcaption><span>Swapping view controllers</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">swapControllersIfNeeded</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">UIDeviceOrientation</span> <span class="n">deviceOrientation</span> <span class="o">=</span> <span class="p">[</span><span class="n">UIDevice</span> <span class="n">currentDevice</span><span class="p">].</span><span class="n">orientation</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Check that we&#39;re not showing the wrong controller for the orientation.</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">UIDeviceOrientationIsLandscape</span><span class="p">(</span><span class="n">deviceOrientation</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">visibleViewController</span> <span class="o">==</span> <span class="n">self</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Orientation is landscape but the visible controller is this one,</span>
+</span><span class='line'>        <span class="c1">// which is the portrait one.</span>
+</span><span class='line'>        <span class="c1">// Create new instance of landscape controller from the storyboard.</span>
+</span><span class='line'>        <span class="c1">// Use a property to keep track of it because we need it for</span>
+</span><span class='line'>        <span class="c1">// the check in the else branch.</span>
+</span><span class='line'>        <span class="n">self</span><span class="p">.</span><span class="n">landscapeViewController</span> <span class="o">=</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">storyboard</span> <span class="nl">instantiateViewControllerWithIdentifier:</span><span class="s">@&quot;LandscapeViewController&quot;</span><span class="p">];</span>
+</span><span class='line'>        <span class="c1">// TODO - Set the landscape controller&#39;s model from the model we have.</span>
+</span><span class='line'>        <span class="c1">// self.landscapeViewController.model = self.model;</span>
+</span><span class='line'>        <span class="c1">// Push the new controller rather than use a segue so that we can do it </span>
+</span><span class='line'>        <span class="c1">// without animation.</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span> <span class="nl">pushViewController:</span><span class="n">self</span><span class="p">.</span><span class="n">landscapeViewController</span>
+</span><span class='line'>                                             <span class="nl">animated:</span><span class="n">NO</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">UIDeviceOrientationIsPortrait</span><span class="p">(</span><span class="n">deviceOrientation</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span><span class='line'>             <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">visibleViewController</span> <span class="o">==</span> <span class="n">self</span><span class="p">.</span><span class="n">landscapeViewController</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Orientation is portrait but the visible controller is</span>
+</span><span class='line'>        <span class="c1">// the landscape controller. Pop the top controller, we</span>
+</span><span class='line'>        <span class="c1">// know the portrait controller, self, is the next one down.</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span> <span class="nl">popViewControllerAnimated:</span><span class="n">NO</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There are two occasions when swapControllersIfNeeded must be called. First, when the orientation changes, which will handle the case where ALandscape or APortrait is showing and must be swapped. Second, when the navigation view controller shows a new view controller. This is to take care of the case where rotation takes place while view B is showing.</p>
+
+<p>To deal with orientation changes register, in awakeFromNib, for orientation change events and implement a method handle them.</p>
+
+<figure class='code'><figcaption><span>Responding to orientation changes.</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'>    <span class="c1">// In awakeFromNib</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">UIDevice</span> <span class="n">currentDevice</span><span class="p">]</span> <span class="n">beginGeneratingDeviceOrientationNotifications</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">addObserver:</span><span class="n">self</span>
+</span><span class='line'>                                             <span class="nl">selector:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">orientationChanged:</span><span class="p">)</span>
+</span><span class='line'>                                                 <span class="nl">name:</span><span class="n">UIDeviceOrientationDidChangeNotification</span>
+</span><span class='line'>                                               <span class="nl">object:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Method to handle orientation changes.</span>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">orientationChanged:</span><span class="p">(</span><span class="n">NSNotification</span> <span class="o">*</span><span class="p">)</span><span class="n">notification</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="n">swapControllersIfNeeded</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For the navigation controller case APortraitViewController must conform to the UINavigationControllerDelegate protocol and implement one of its methods.</p>
+
+<figure class='code'><figcaption><span>Responding to navigation controller view changes</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'>    <span class="c1">// In awakeFromNib register as the delegate.</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">delegate</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Called when a new view is shown.</span>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">navigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="n">navigationController</span>
+</span><span class='line'>       <span class="nl">didShowViewController:</span><span class="p">(</span><span class="n">UIViewController</span> <span class="o">*</span><span class="p">)</span><span class="n">viewController</span>
+</span><span class='line'>                    <span class="nl">animated:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="n">animated</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// May be coming back from another controller to find we&#39;re</span>
+</span><span class='line'>    <span class="c1">// showing the wrong controller for the orientation.</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">self</span> <span class="n">swapControllersIfNeeded</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>One final wrinkle is that we don&#8217;t want a back button appearing at the top of the landscape view pointing back to the portrait view. To prevent this the Shows Navigation Bar property for the Navigation Controller must be unchecked. However, we do want a back button to go from view B back to view A so in the viewWillAppear: method of the B view controller the navigation bar is unhidden. If you want APortrait and ALandscape views can have title bars added to them so their appearance is as it would be if Shows Navigation Bar was checked.</p>
+
+<figure class='code'><figcaption><span>Showing the navigation bar</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">viewWillAppear:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="n">animated</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span> <span class="nl">setNavigationBarHidden:</span><span class="n">NO</span>
+</span><span class='line'>                                             <span class="nl">animated:</span><span class="n">animated</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+</feed>
