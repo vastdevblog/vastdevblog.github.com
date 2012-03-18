@@ -11,11 +11,17 @@
         <lastmod>2012-03-12T09:43:35-05:00</lastmod>
     </url>
     <url>
+        <loc>
+            http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala/
+        </loc>
+        <lastmod>2012-03-18T11:13:53-05:00</lastmod>
+    </url>
+    <url>
         <loc>http://vast.com/vastdevblog/blog/archives/</loc>
-        <lastmod>2012-03-12T09:43:35-05:00</lastmod>
+        <lastmod>2012-03-18T11:13:53-05:00</lastmod>
     </url>
     <url>
         <loc>http://vast.com/vastdevblog/</loc>
-        <lastmod>2012-03-12T09:43:35-05:00</lastmod>
+        <lastmod>2012-03-18T11:13:53-05:00</lastmod>
     </url>
 </urlset>

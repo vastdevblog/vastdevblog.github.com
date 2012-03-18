@@ -1,239 +1,197 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: finagle | Vast Development Blog]]></title>
-  <link href="http://vast.com/vastdevblog/blog/categories/finagle/atom.xml" rel="self"/>
-  <link href="http://vast.com/vastdevblog/"/>
-  <updated>2012-03-18T11:15:58-05:00</updated>
-  <id>http://vast.com/vastdevblog/</id>
-  <author>
-    <name><![CDATA[vast.com]]></name>
-    
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Using Spring transaction support with Scala - Vast Development Blog</title>
+  <meta name="author" content="vast.com">
 
   
-  <entry>
-    <title type="html"><![CDATA[Finagling]]></title>
-    <link href="http://vast.com/vastdevblog/blog/2012/03/10/finagling/"/>
-    <updated>2012-03-10T16:08:00-06:00</updated>
-    <id>http://vast.com/vastdevblog/blog/2012/03/10/finagling</id>
-    <content type="html"><![CDATA[<p>I've been playing with <a href="http://twitter.github.com/finagle/">Finagle</a>, or "Finagle, from Twitter" as the site refers to it, to see whether it will work for me as a framework to support a simple http rpc/rest server. The Finagle documentation is good but I wanted to explore in a complete simple example how I could implement</p>
+  <meta name="description" content="What&#8217;s the best way to use Spring&#8217;s transaction management features from a Scala program? This is my second attempt to come up with an &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Vast Development Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Vast Development Blog</a></h1>
+  
+    <h2>The vast.com development blog.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:vast.com/vastdevblog" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Using Spring Transaction Support With Scala</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-03-16T14:30:00-05:00" pubdate data-updated="true">Mar 16<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>What&#8217;s the best way to use <a href="http://www.springsource.org/">Spring</a>&#8217;s <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html">transaction management</a> features from a Scala program? This is my second attempt to come up with an answer to that question.</p>
+
+<p>My preference for Spring transactions with Java is to use the <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html#transaction-declarative-annotations">@Transactional</a> annotation. I&#8217;d like to be able to achieve the same effect in Scala.</p>
+
+<p>The intention for the Java annotations, and what we want in Scala, is to</p>
 
 <ul>
-<li>Catching execptions from underlying services and returning 500 response codes to clients.</li>
-<li>Returning a timeout response if the underlying service takes too long to respone.</li>
-<li>Separating common process, such as extracting values from headers, from more specific service handling.</li>
-<li>Mapping from urls to services.</li>
-<li>Executing service code on a separate thread from the request processing thread.</li>
+<li>Have some piece of code execute inside a transaction.</li>
+<li>Be able to specify the behavior of the transaction.</li>
+<li>Don&#8217;t overwhelm the rest of the funactionality with the transactional code.</li>
 </ul>
 
 
-<!-- more-->
+<!-- more -->
 
 
-<p>The two files below are what I came up with. I've added lots of comments to explain what's going on so they should read clearly from top to bottom.</p>
+<p>In Java with Spring the recommended approach is to define an interface, implement it and annotate the implementation. Using an interface lets Spring use the <a href="http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/reflect/Proxy.html">JDK&#8217;s proxying mechanism</a>. Below is an example of this usage.</p>
 
-<p>The ExampleServer responds to two urls, http://localhost:8080/ok will return a 200 response with some json, http://localhost:8080/timeout will return a 500 response because the underlying service takes too long to respond.</p>
+<figure class='code'><figcaption><span>Example Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">SomeInterface</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="nf">someMethod</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="nf">someReadOnlyMethod</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">SomeClass</span> <span class="kd">implements</span> <span class="n">SomeInterface</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Transactional</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">someMethod</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// Some code that gets executed in a read/write transaction.</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Transactional</span><span class="o">(</span><span class="n">readOnly</span> <span class="o">=</span> <span class="kc">true</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">someReadOnlyMethod</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// Some code that gets executed in a read only transaction.</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p><div><script src='https://gist.github.com/2022320.js?file=ExampleServer.scala'></script>
-<noscript><pre><code>package com.vast.example
 
-import java.net.InetSocketAddress
-import java.util.UUID
-import java.util.concurrent.{Executors, TimeUnit}
-import com.google.common.base.Splitter
-import com.twitter.finagle.http.Http
-import com.twitter.finagle.builder.{Server, ServerBuilder}
-import com.twitter.finagle.service.TimeoutFilter
-import com.twitter.finagle.{Service, SimpleFilter, GlobalRequestTimeoutException}
-import com.twitter.util.{Future, FuturePool, FutureTransformer, Duration}
-import org.codehaus.jackson.map.ObjectMapper
-import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
-import org.jboss.netty.handler.codec.http.{HttpResponseStatus, DefaultHttpResponse, HttpRequest, HttpResponse}
-import org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1
-import org.jboss.netty.handler.codec.http.HttpResponseStatus.{NOT_FOUND, INTERNAL_SERVER_ERROR}
-import org.jboss.netty.util.CharsetUtil.UTF_8
-import org.jboss.netty.buffer.ChannelBuffer
+<p>In Scala we can&#8217;t use the interface approach but we can get the same, effect using language features. What we can write is code like this.</p>
 
-/**
- * Server entry point.
- *
- * @author Alex Moffat (alex.moffat@vast.com)
- */
+<figure class='code'><figcaption><span>Example Scala Usage</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>  <span class="k">def</span> <span class="n">someMethod</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span>
+</span><span class='line'>      <span class="n">inTransaction</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// Some code that runs in a read/write transaction.</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="n">someReadOnlyMethod</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// We can do stuff here</span>
+</span><span class='line'>      <span class="n">inTransaction</span><span class="o">(</span><span class="n">readOnly</span> <span class="k">=</span> <span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// Some code that runs in a read only transaction.</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="c1">// and here outside the transaction</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-object ExampleServer {
+
+<p>A side effect is that you don&#8217;t have to use <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/aop.html#aop-proxying">Spring&#8217;s proxying mechanisms</a>, which requires either a Java interface or using CGLIB.</p>
+
+<p>The signature for the inTransaction method should be something like</p>
+
+<figure class='code'><figcaption><span>inTransaction  </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'>  <span class="k">def</span> <span class="n">inTransaction</span><span class="o">[</span><span class="kt">T</span><span class="o">](</span><span class="n">readOnly</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">false</span><span class="o">)(</span><span class="n">value</span><span class="k">:</span> <span class="o">=&gt;</span><span class="n">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">T</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
-  def main(args: Array[String]) {
+<p>It takes two lists of parameters. The first configures the transaction, in the same waht the arguments to the Spring Transactional annotation do. The second is a single call-by-name parameter, so that it is not evaluated before it&#8217;s used, that provides the value.</p>
 
-    // Requests pass down through the filters to the service. The
-    // response from the service is passed back up through the filters
-    // to be returned. The Filter class provides the &quot;andThen&quot; method
-    // for creating the filter chain.
-    val service =
-      new ExceptionFilter andThen
-      new HeaderFilter andThen
-      new HttpTimeoutFilter(Duration(1, TimeUnit.SECONDS)) andThen
-      new RestService()
+<p>The complete implementation is shown below. A trait is used so that transactional support can be added to any class by including the trait. The including class needs to provide an instance of <a href="http://srcrr.org/java/spring/3.1.0/reference/org/springframework/transaction/PlatformTransactionManager.html">PlatformTransactionManager</a> for the trait to use. This can be done with a val constructor parameter as shown.</p>
 
-    // Create the server and start it. The ServerBuilder is an example
-    // of the Type-Safe Builder pattern in scala. Options are set on
-    // the builder. Build is called to construct and start the server.
-    val server: Server = ServerBuilder()
-      .codec(Http())
-      .bindTo(new InetSocketAddress(8080))
-      .name(&quot;httpserver&quot;)
-      .build(service)
-  }
-}
-
-// Handle any uncaught exceptions that occur in filters or services
-// lower down the chain. We extend SimpleFilter because we're not
-// going to change the type of the request or response.
-class ExceptionFilter extends SimpleFilter[HttpRequest, HttpResponse] {
-
-  // Deal with successful and error responses.
-  val transformer =
-    new FutureTransformer[HttpResponse, HttpResponse] {
-      // A successful response is just passed through.
-      override def map(value: HttpResponse): HttpResponse =
-        value
-      // An error is converted into a 500 response. The
-      // Responses object is in this file.
-      override def handle(throwable: Throwable): HttpResponse =
-        Responses.InternalServerError(throwable.getMessage)
-    }
-
-  // Apply method is where the filtering takes place.
-  def apply(request: HttpRequest, service: Service[HttpRequest, HttpResponse]) = {
-    // Use transformedBy method to deal with both the normal and error responses.
-    service(request).transformedBy(transformer)
-  }
-}
-
-// An trial filter that adds a header to the request and another
-// to the response.
-class HeaderFilter extends SimpleFilter[HttpRequest, HttpResponse] {
-
-  def apply(request: HttpRequest, service: Service[HttpRequest, HttpResponse]) = {
-    // Look for a X-Request-ID header and add one if missing.
-    val id = request.getHeader(&quot;X-Request-ID&quot;)
-    if (id == null) {
-      request.setHeader(&quot;X-Request-ID&quot;,
-        UUID.randomUUID().toString)
-    }
-
-    // Add X-Processes to the response.
-    service(request).onSuccess(r =&gt; {
-      r.addHeader(&quot;X-Processed&quot;, &quot;TRUE&quot;)
-    })
-  }
-}
-
-// Specialize the general TimeoutFilter to deal with
-// HTTP requests and responses.
-class HttpTimeoutFilter(timeout: Duration)
-  extends TimeoutFilter[HttpRequest, HttpResponse](timeout,
-    new GlobalRequestTimeoutException(timeout)) {
-
-}
-
-// Invoke the correct underlying service based on the incoming url.
-class RestService extends Service[HttpRequest, HttpResponse] {
-
-  // Simple service that returns some json.
-  val okService = new SimpleService()
-  // Simple service that waits for longer that the configured
-  // timeout for the server.
-  val timeoutService = new SimpleService(Some(1200))
-
-  // This pool is used to convert HttpResponse to
-  // Future[HttpResponse] by executing the service on
-  // a separate thread.
-  val futurePool = FuturePool(Executors.newFixedThreadPool(4))
-  // Used to split URIs.
-  val splitter = Splitter.on('/').omitEmptyStrings()
-
-  def apply(req: HttpRequest) = {
-
-    val path = splitter.split(req.getUri).iterator()
-
-    // Match the pieces of the path
-    if (path.hasNext) {
-      path.next() match {
-          // Path starts with /ok so use ok service.
-        case &quot;ok&quot; =&gt; futurePool {
-          // See Responses.OK comments below.
-          Responses.OK(req,
-            (req: HttpRequest) =&gt; { okService(req.getUri) })}
-          // Path starts with /timeout so use timeout service.
-        case &quot;timeout&quot; =&gt; futurePool {
-          Responses.OK(req,
-            (req: HttpRequest) =&gt; { timeoutService(req.getUri) })}
-          // No match so return a not found response. Future.value 
-          // creates a Future with an existing constant value.
-        case _ =&gt; Future.value(Responses.NotFound())
-      }
-    } else {
-      // No match so not found.
-      Future.value(Responses.NotFound())
-    }
-  }
-}
-
-// A very simple service that returns a model object.
-class SimpleService(val waitFor: Option[Int] = None) {
-
-  def apply(name: String) = {
-    // If a time to wait is supplied then wait. This
-    // is used to timeout the service.
-    waitFor.foreach(t =&gt; this.synchronized { wait(t) })
-    // Return the model object.
-    new SimpleModel(UUID.randomUUID().toString, name, &quot;Some Street&quot;)
-  }
-}
-
-// Objects to produce some standard http responses.
-object Responses {
-
-  // Used to convert objects into json
-  val mapper = new ObjectMapper
-
-  // Create an HttpResponse from a status and some content.
-  private def respond(status: HttpResponseStatus, content: ChannelBuffer): HttpResponse = {
-    val response = new DefaultHttpResponse(HTTP_1_1, status)
-    response.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;)
-    response.setHeader(&quot;Cache-Control&quot;, &quot;no-cache&quot;)
-    response.setContent(content)
-    response    
-  }
-  
-  object OK {
-    def apply(req: HttpRequest, service: (HttpRequest) =&gt; Object): HttpResponse = 
-      respond(HttpResponseStatus.OK, 
-        copiedBuffer(mapper.writeValueAsBytes(service(req))))      
-  }
-
-  object NotFound {
-    def apply(): HttpResponse  = 
-      respond(NOT_FOUND, 
-        copiedBuffer(&quot;{\&quot;status\&quot;:\&quot;NOT_FOUND\&quot;}&quot;, UTF_8))    
-  }
-
-  object InternalServerError {
-    def apply(message: String): HttpResponse = 
-      respond(INTERNAL_SERVER_ERROR,
-        copiedBuffer(&quot;{\&quot;status\&quot;:\&quot;INTERNAL_SERVER_ERROR\&quot;, &quot; +
-        &quot;\&quot;message\&quot;:\&quot;&quot; + message + &quot;\&quot;}&quot;, UTF_8))
-  }
-}
-</code></pre></noscript></div>
-</p>
-
-<p> The SimpleModel is the Java object that's converted to json for return to the client.</p>
-
-<p><div><script src='https://gist.github.com/2022351.js?file=ExampleModel.java'></script>
+<div><script src='https://gist.github.com/2053120.js?file=TransactionalSupport.scala'></script>
 <noscript><pre><code>&lt;!DOCTYPE html&gt;
 &lt;html&gt;
   &lt;head prefix=&quot;og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# githubog: http://ogp.me/ns/fb/githubog#&quot;&gt;
@@ -249,12 +207,12 @@ object Responses {
 
     
 
-    &lt;link href=&quot;https://a248.e.akamai.net/assets.github.com/stylesheets/bundles/github-033869e1223f20ed1dbf27d14e94bbf81cc60e66.css&quot; media=&quot;screen&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
-    &lt;link href=&quot;https://a248.e.akamai.net/assets.github.com/stylesheets/bundles/github2-2965eb9135605f109014c4b8894c28880bb9cde4.css&quot; media=&quot;screen&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+    &lt;link href=&quot;https://a248.e.akamai.net/assets.github.com/stylesheets/bundles/github-d011936a7bd7324ae9d250df44276bb770d66888.css&quot; media=&quot;screen&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+    &lt;link href=&quot;https://a248.e.akamai.net/assets.github.com/stylesheets/bundles/github2-48a5777ed49db98125873e5c380b47ca60da1824.css&quot; media=&quot;screen&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
     
 
-    &lt;script src=&quot;https://a248.e.akamai.net/assets.github.com/javascripts/bundles/jquery-5b140862bd914d3619171dece9be92269c2b1fe1.js&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
-    &lt;script src=&quot;https://a248.e.akamai.net/assets.github.com/javascripts/bundles/github-c84d86141b05b0034f207e5a99f1f4d96a126dec.js&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://a248.e.akamai.net/assets.github.com/javascripts/bundles/jquery-cd3aa6c909bc9018f484738538d9d29876972a67.js&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://a248.e.akamai.net/assets.github.com/javascripts/bundles/github-20284c600964ca37a43f7df731a148dae369f770.js&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
     
 
     
@@ -271,10 +229,10 @@ object Responses {
           &lt;a class=&quot;site-logo&quot; href=&quot;https://github.com&quot;&gt;
             &lt;!--[if IE]&gt;
             &lt;img alt=&quot;GitHub&quot; class=&quot;github-logo&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/header/logov7.png?1323882717&quot; /&gt;
-            &lt;img alt=&quot;GitHub&quot; class=&quot;github-logo-hover&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/header/logov7-hover.png?1324325376&quot; /&gt;
+            &lt;img alt=&quot;GitHub&quot; class=&quot;github-logo-hover&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/header/logov7-hover.png?1324325358&quot; /&gt;
             &lt;![endif]--&gt;
             &lt;img alt=&quot;GitHub&quot; class=&quot;github-logo-4x&quot; height=&quot;30&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/header/logov7@4x.png?1323882717&quot; /&gt;
-            &lt;img alt=&quot;GitHub&quot; class=&quot;github-logo-4x-hover&quot; height=&quot;30&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/header/logov7@4x-hover.png?1324325376&quot; /&gt;
+            &lt;img alt=&quot;GitHub&quot; class=&quot;github-logo-4x-hover&quot; height=&quot;30&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/header/logov7@4x-hover.png?1324325358&quot; /&gt;
           &lt;/a&gt;
 
                   &lt;!--
@@ -286,7 +244,7 @@ object Responses {
         &lt;li class=&quot;explore&quot;&gt;&lt;a href=&quot;https://github.com/explore&quot;&gt;Explore GitHub&lt;/a&gt;&lt;/li&gt;
       &lt;li class=&quot;features&quot;&gt;&lt;a href=&quot;https://github.com/features&quot;&gt;Features&lt;/a&gt;&lt;/li&gt;
         &lt;li class=&quot;blog&quot;&gt;&lt;a href=&quot;https://github.com/blog&quot;&gt;Blog&lt;/a&gt;&lt;/li&gt;
-      &lt;li class=&quot;login&quot;&gt;&lt;a href=&quot;https://github.com/login?return_to=%2Fgist%2F2022351%2FExampleModel.java&quot;&gt;Login&lt;/a&gt;&lt;/li&gt;
+      &lt;li class=&quot;login&quot;&gt;&lt;a href=&quot;https://github.com/login?return_to=%2Fgist%2F2053120%2FTransactionalSupport.scala&quot;&gt;Login&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
 
 
@@ -387,16 +345,16 @@ object Responses {
 
 
 &lt;div id=&quot;parallax_field&quot;&gt;
-    &lt;img alt=&quot;building&quot; class=&quot;js-plaxify&quot; data-invert=&quot;true&quot; data-xrange=&quot;0&quot; data-yrange=&quot;20&quot; height=&quot;415&quot; id=&quot;parallax_bg&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_bg.jpg?1315928456&quot; width=&quot;940&quot; /&gt;
+    &lt;img alt=&quot;building&quot; class=&quot;js-plaxify&quot; data-invert=&quot;true&quot; data-xrange=&quot;0&quot; data-yrange=&quot;20&quot; height=&quot;415&quot; id=&quot;parallax_bg&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_bg.jpg?1315937721&quot; width=&quot;940&quot; /&gt;
 &lt;/div&gt;
 &lt;div id=&quot;parallax_illustration&quot;&gt;
-  &lt;img alt=&quot;404 | &amp;ldquo;This is not the web page you are looking for&amp;rdquo;&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;20&quot; data-yrange=&quot;10&quot; height=&quot;249&quot; id=&quot;parallax_error_text&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_errortext.png?1315928456&quot; width=&quot;271&quot; /&gt;
-  &lt;img alt=&quot;Octobi Wan Catnobi&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;230&quot; id=&quot;parallax_octocat&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_octocat.png?1315928456&quot; width=&quot;188&quot; /&gt;
-  &lt;img alt=&quot;land speeder&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;156&quot; id=&quot;parallax_speeder&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_speeder.png?1315928456&quot; width=&quot;440&quot; /&gt;
-  &lt;img alt=&quot;Octobi Wan Catnobi's shadow&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;49&quot; id=&quot;parallax_octocatshadow&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_octocatshadow.png?1315928456&quot; width=&quot;166&quot; /&gt;
-  &lt;img alt=&quot;land speeder's shadow&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;75&quot; id=&quot;parallax_speedershadow&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_speedershadow.png?1315928456&quot; width=&quot;430&quot; /&gt;
-  &lt;img alt=&quot;building&quot; class=&quot;js-plaxify&quot; data-invert=&quot;true&quot; data-xrange=&quot;50&quot; data-yrange=&quot;20&quot; height=&quot;123&quot; id=&quot;parallax_building_1&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_building_1.png?1315928456&quot; width=&quot;304&quot; /&gt;
-  &lt;img alt=&quot;building&quot; class=&quot;js-plaxify&quot; data-invert=&quot;true&quot; data-xrange=&quot;75&quot; data-yrange=&quot;30&quot; height=&quot;50&quot; id=&quot;parallax_building_2&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_building_2.png?1315928456&quot; width=&quot;116&quot; /&gt;
+  &lt;img alt=&quot;404 | &amp;ldquo;This is not the web page you are looking for&amp;rdquo;&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;20&quot; data-yrange=&quot;10&quot; height=&quot;249&quot; id=&quot;parallax_error_text&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_errortext.png?1315937721&quot; width=&quot;271&quot; /&gt;
+  &lt;img alt=&quot;Octobi Wan Catnobi&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;230&quot; id=&quot;parallax_octocat&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_octocat.png?1315937721&quot; width=&quot;188&quot; /&gt;
+  &lt;img alt=&quot;land speeder&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;156&quot; id=&quot;parallax_speeder&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_speeder.png?1315937721&quot; width=&quot;440&quot; /&gt;
+  &lt;img alt=&quot;Octobi Wan Catnobi's shadow&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;49&quot; id=&quot;parallax_octocatshadow&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_octocatshadow.png?1315937721&quot; width=&quot;166&quot; /&gt;
+  &lt;img alt=&quot;land speeder's shadow&quot; class=&quot;js-plaxify&quot; data-xrange=&quot;10&quot; data-yrange=&quot;10&quot; height=&quot;75&quot; id=&quot;parallax_speedershadow&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_speedershadow.png?1315937721&quot; width=&quot;430&quot; /&gt;
+  &lt;img alt=&quot;building&quot; class=&quot;js-plaxify&quot; data-invert=&quot;true&quot; data-xrange=&quot;50&quot; data-yrange=&quot;20&quot; height=&quot;123&quot; id=&quot;parallax_building_1&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_building_1.png?1315937721&quot; width=&quot;304&quot; /&gt;
+  &lt;img alt=&quot;building&quot; class=&quot;js-plaxify&quot; data-invert=&quot;true&quot; data-xrange=&quot;75&quot; data-yrange=&quot;30&quot; height=&quot;50&quot; id=&quot;parallax_building_2&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/404/parallax_building_2.png?1315937721&quot; width=&quot;116&quot; /&gt;
 &lt;/div&gt;
 
           &lt;/div&gt;
@@ -460,12 +418,12 @@ object Responses {
           &lt;li&gt;&lt;a href=&quot;https://github.com/security&quot;&gt;Security&lt;/a&gt;&lt;/li&gt;
       &lt;/ul&gt;
 
-      &lt;p&gt;&amp;copy; 2012 &lt;span title=&quot;0.01882s from fe11.rs.github.com&quot;&gt;GitHub&lt;/span&gt; Inc. All rights reserved.&lt;/p&gt;
+      &lt;p&gt;&amp;copy; 2012 &lt;span title=&quot;0.01974s from fe12.rs.github.com&quot;&gt;GitHub&lt;/span&gt; Inc. All rights reserved.&lt;/p&gt;
     &lt;/div&gt;&lt;!-- /#legal or /#legal_ie--&gt;
 
       &lt;div class=&quot;sponsor&quot;&gt;
         &lt;a href=&quot;http://www.rackspace.com&quot; class=&quot;logo&quot;&gt;
-          &lt;img alt=&quot;Dedicated Server&quot; height=&quot;36&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/footer/rackspaces_logo.png?1329521039&quot; width=&quot;38&quot; /&gt;
+          &lt;img alt=&quot;Dedicated Server&quot; height=&quot;36&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/footer/rackspaces_logo.png?1329521040&quot; width=&quot;38&quot; /&gt;
         &lt;/a&gt;
         Powered by the &lt;a href=&quot;http://www.rackspace.com &quot;&gt;Dedicated
         Servers&lt;/a&gt; and&lt;br/&gt; &lt;a href=&quot;http://www.rackspacecloud.com&quot;&gt;Cloud
@@ -791,15 +749,143 @@ I think you should use an
       &lt;p&gt;&lt;span class=&quot;icon&quot;&gt;&lt;/span&gt; Something went wrong with that request. Please try again. &lt;a href=&quot;javascript:;&quot; class=&quot;ajax-error-dismiss&quot;&gt;Dismiss&lt;/a&gt;&lt;/p&gt;
     &lt;/div&gt;
 
+    &lt;div id=&quot;logo-popup&quot;&gt;
+      &lt;h2&gt;Looking for the GitHub logo?&lt;/h2&gt;
+      &lt;ul&gt;
+        &lt;li&gt;
+          &lt;h4&gt;GitHub Logo&lt;/h4&gt;
+          &lt;a href=&quot;http://github-media-downloads.s3.amazonaws.com/GitHub_Logos.zip&quot;&gt;&lt;img alt=&quot;Github_logo&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/about_page/github_logo.png?1315937721&quot; /&gt;&lt;/a&gt;
+          &lt;a href=&quot;http://github-media-downloads.s3.amazonaws.com/GitHub_Logos.zip&quot; class=&quot;minibutton btn-download download&quot;&gt;&lt;span&gt;&lt;span class=&quot;icon&quot;&gt;&lt;/span&gt;Download&lt;/span&gt;&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          &lt;h4&gt;The Octocat&lt;/h4&gt;
+          &lt;a href=&quot;http://github-media-downloads.s3.amazonaws.com/Octocats.zip&quot;&gt;&lt;img alt=&quot;Octocat&quot; src=&quot;https://a248.e.akamai.net/assets.github.com/images/modules/about_page/octocat.png?1315937721&quot; /&gt;&lt;/a&gt;
+          &lt;a href=&quot;http://github-media-downloads.s3.amazonaws.com/Octocats.zip&quot; class=&quot;minibutton btn-download download&quot;&gt;&lt;span&gt;&lt;span class=&quot;icon&quot;&gt;&lt;/span&gt;Download&lt;/span&gt;&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+
     
     
     
-    &lt;span id='server_response_time' data-time='0.02474' data-host='fe11'&gt;&lt;/span&gt;
+    &lt;span id='server_response_time' data-time='0.02185' data-host='fe12'&gt;&lt;/span&gt;
   &lt;/body&gt;
 &lt;/html&gt;
 </code></pre></noscript></div>
-</p>
-]]></content>
-  </entry>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
   
-</feed>
+
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-03-16T14:30:00-05:00" pubdate data-updated="true">Mar 16<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/spring/'>spring</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala/" data-via="" data-counturl="http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/03/10/finagling/" title="Previous Post: Finagling">&laquo; Finagling</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/03/16/using-spring-transaction-support-with-scala/">Using Spring transaction support with Scala</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/03/10/finagling/">Finagling</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/02/12/rotating-to-show-different-ios-views/">Rotating to show different iOS views</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - vast.com -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
