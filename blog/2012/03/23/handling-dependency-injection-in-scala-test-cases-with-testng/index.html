@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Vast Development Blog</title>
+  <title>Handling Dependency Injection in Scala test cases with TestNG - Vast Development Blog</title>
   <meta name="author" content="vast.com">
 
   
@@ -20,7 +20,7 @@ The two interesting &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://vast.com/vastdevblog">
+  <link rel="canonical" href="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -64,15 +64,12 @@ The two interesting &hellip;">
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/">Handling Dependency Injection in Scala Test Cases With TestNG</a></h1>
+      <h1 class="entry-title">Handling Dependency Injection in Scala Test Cases With TestNG</h1>
     
     
       <p class="meta">
@@ -95,7 +92,7 @@ The two interesting &hellip;">
   </header>
 
 
-  <div class="entry-content"><p>This is a short post about using <a href="http://code.google.com/p/google-guice/">Guice</a> dependency injection
+<div class="entry-content"><p>This is a short post about using <a href="http://code.google.com/p/google-guice/">Guice</a> dependency injection
 in Scala test cases that are configured with <a href="http://testng.org/doc/index.html">TestNG</a> annotations.
 The two interesting points are</p>
 
@@ -182,74 +179,16 @@ Backticks must be used around override and with because they are reserved words 
 <p>To use the dependencies you just need to add the <code>@Inject</code> annotation to the test class.
 You can inject values for variables, as in the example, or values for test method parameters, for instance <code>def notUnique(@Inject() idGenerator: UniqueIdGenerator)</code>, or into the constructor, for instance, <code>class ExampleTest @Inject() (idGenerator: UniqueIdGenerator)</code>.</p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/03/16/using-spring-transaction-support-with-scala/">Using Spring Transaction Support With Scala</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
 
-<time datetime="2012-03-16T14:30:00-05:00" pubdate data-updated="true">Mar 16<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>What&#8217;s the best way to use <a href="http://www.springsource.org/">Spring</a>&#8217;s <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html">transaction management</a> features from a Scala program? This is my second attempt to come up with an answer to that question.</p>
-
-<p>My preference for Spring transactions with Java is to use the <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html#transaction-declarative-annotations">@Transactional</a> annotation. I&#8217;d like to be able to achieve the same effect in Scala.</p>
-
-<p>The intention for the Java annotations, and what we want in Scala, is to</p>
-
-<ul>
-<li>Have some piece of code execute inside a transaction.</li>
-<li>Be able to specify the behavior of the transaction.</li>
-<li>Don&#8217;t overwhelm the rest of the funactionality with the transactional code.</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/03/16/using-spring-transaction-support-with-scala/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/03/10/finagling/">Finagling</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -261,86 +200,38 @@ You can inject values for variables, as in the example, or values for test metho
   
 
 
-<time datetime="2012-03-10T16:08:00-06:00" pubdate data-updated="true">Mar 10<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I&#8217;ve been playing with <a href="http://twitter.github.com/finagle/">Finagle</a>, or &#8220;Finagle, from Twitter&#8221; as the site refers to it, to see whether it will work for me as a framework to support a simple http rpc/rest server. The Finagle documentation is good but I wanted to explore in a complete simple example how I could implement</p>
-
-<ul>
-<li>Catching execptions from underlying services and returning 500 response codes to clients.</li>
-<li>Returning a timeout response if the underlying service takes too long to respone.</li>
-<li>Separating common process, such as extracting values from headers, from more specific service handling.</li>
-<li>Mapping from urls to services.</li>
-<li>Executing service code on a separate thread from the request processing thread.</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/03/10/finagling/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
+<time datetime="2012-03-23T15:46:00-05:00" pubdate data-updated="true">Mar 23<span>rd</span>, 2012</time>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/02/12/rotating-to-show-different-ios-views/">Rotating to Show Different iOS Views</a></h1>
-    
-    
-      <p class="meta">
-        
 
-
-
-
-
-
-
-
+<span class="categories">
   
+    <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/testng/'>testng</a>
+  
+</span>
 
 
-<time datetime="2012-02-12T20:11:00-06:00" pubdate data-updated="true">Feb 12<span>th</span>, 2012</time>
-        
-      </p>
+    </p>
     
-  </header>
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/" data-via="" data-counturl="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/" >Tweet</a>
+  
+  
+  
+</div>
 
-
-  <div class="entry-content"><p>In the tradition of explaining fairly simple things at great length this approach is based on the documentation from Apple describing <a href="https://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/RespondingtoDeviceOrientationChanges/RespondingtoDeviceOrientationChanges.html#//apple_ref/doc/uid/TP40007457-CH7-SW1">Creating an Alternate Landscape Interface</a> and various answers on <a href="http://stackoverflow.com/">stackoverflow</a>. It differs from the information I could find on the internet because the flow includes a navigation controller and uses a storyboard. The flow between the screens in the interface is shown in the diagram below.</p>
-
-<p><img src="/images/2012-02-12-ios-views.png" alt="Flow" /></p>
-
-<p>There is a first screen, A, that has two alternate views, one portrait and one landscape. These can&#8217;t be created using the springs and struts layout tools. Rotating the  phone while screen A is showing should switch between the two views. Tapping some element on screen A, in either view, transitions to screen B. Screen B handles rotation itself by redrawing its interface in drawRect:. Going back from B should show the correct version of A. There&#8217;s a navigation controller wrapping the whole interface that provides the navigation bar and button in view B to go back to view A.</p>
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/03/16/using-spring-transaction-support-with-scala/" title="Previous Post: Using Spring transaction support with Scala">&laquo; Using Spring transaction support with Scala</a>
+      
+      
+    </p>
+  </footer>
+</article>
 
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/02/12/rotating-to-show-different-ios-views/">Read on &rarr;</a>
-    </footer>
-  
 
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     <section>
@@ -373,6 +264,7 @@ You can inject values for variables, as in the example, or values for test metho
 
   
 </aside>
+
 
     </div>
   </div>

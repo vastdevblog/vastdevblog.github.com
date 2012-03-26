@@ -4,7 +4,7 @@
   <title><![CDATA[Vast Development Blog]]></title>
   <link href="http://vast.com/vastdevblog/atom.xml" rel="self"/>
   <link href="http://vast.com/vastdevblog/"/>
-  <updated>2012-03-18T11:15:58-05:00</updated>
+  <updated>2012-03-26T09:32:21-05:00</updated>
   <id>http://vast.com/vastdevblog/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -12,6 +12,100 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Handling Dependency Injection in Scala test cases with TestNG]]></title>
+    <link href="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/"/>
+    <updated>2012-03-23T15:46:00-05:00</updated>
+    <id>http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng</id>
+    <content type="html"><![CDATA[<p>This is a short post about using <a href="http://code.google.com/p/google-guice/">Guice</a> dependency injection
+in Scala test cases that are configured with <a href="http://testng.org/doc/index.html">TestNG</a> annotations.
+The two interesting points are</p>
+
+<ul>
+<li>How in Guice do you override production dependencies with test ones when you want to execute a test case?</li>
+<li>How do you use TestNG with Scala?</li>
+</ul>
+
+
+<p>Here&#8217;s a simple example showing how this works.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">import</span> <span class="nn">org.testng.Assert._</span>
+</span><span class='line'><span class="k">import</span> <span class="nn">org.testng.annotations.</span><span class="o">{</span><span class="nc">Guice</span><span class="o">,</span> <span class="nc">Test</span><span class="o">}</span>
+</span><span class='line'><span class="k">import</span> <span class="nn">org.testng.</span><span class="o">{</span><span class="nc">ITestContext</span><span class="o">,</span> <span class="nc">IModuleFactory</span><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Guice</span><span class="o">(</span><span class="n">moduleFactory</span> <span class="k">=</span> <span class="n">classOf</span><span class="o">[</span><span class="kt">ExampleTestModuleFactory</span><span class="o">])</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">ExampleTest</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nd">@Inject</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">idGenerator</span><span class="k">:</span> <span class="kt">UniqueIdGenerator</span> <span class="o">=</span> <span class="k">_</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/**</span>
+</span><span class='line'><span class="cm">   * Make sure we&#39;re using the UniqueIdGenerator that</span>
+</span><span class='line'><span class="cm">   * returns IDs from a known list.</span>
+</span><span class='line'><span class="cm">   */</span>
+</span><span class='line'>  <span class="nd">@Test</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">notUnique</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">assertEquals</span><span class="o">(</span><span class="n">idGenerator</span><span class="o">.</span><span class="n">nextId</span><span class="o">(),</span> <span class="s">&quot;7411c0c8-358c-4e5c-879d-96112806c9aa&quot;</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">ExampleTestModuleFactory</span> <span class="k">extends</span> <span class="nc">IModuleFactory</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="n">createModule</span><span class="o">(</span><span class="n">context</span><span class="k">:</span> <span class="kt">ITextContext</span><span class="o">,</span> <span class="n">testClass</span><span class="k">:</span> <span class="kt">Class</span><span class="o">[</span><span class="k">_</span><span class="o">])</span> <span class="k">=</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nc">Modules</span><span class="o">.</span><span class="n">`override`</span><span class="o">(</span><span class="k">new</span> <span class="nc">ProductionModuleOne</span><span class="o">,</span> <span class="k">new</span> <span class="nc">ProductionModuleTwo</span><span class="o">)</span>
+</span><span class='line'>      <span class="o">.</span><span class="n">`with`</span><span class="o">(</span><span class="k">new</span> <span class="nc">ExampleTestModule</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Starting at the top with the <code>@Guice</code> annotation. This identifies the class that TestNG will
+use to create the Guice module to provide the dependencies for the test. This class, in
+the example ExampleTestModuleFactory, has
+to extend the IModuleFactory interface and return the module to use from the
+<code>createModule(context: ITextContext, testClass: Class[_])</code> method. Instead of a moduleFactory The <code>@Guice</code> annotation can also
+be used by simply listing the guice modules <code>@Guice(module = Array(classOf[ProductionModuleOne], classOf[ProductionModuleTwo]))</code> but this doesn&#8217;t allow for replacing production dependencies with test ones.</p>
+
+<p>In ExampleTextModuleFactory the <code>override</code> and <code>with</code> methods on the
+<a href="http://google-guice.googlecode.com/git/javadoc/com/google/inject/util/Modules.html">Modules</a> and
+<a href="http://google-guice.googlecode.com/git/javadoc/com/google/inject/util/Modules.OverriddenModuleBuilder.html">OverriddenModuleBuilder</a>
+classes are used to combine the production dependencies and then override some of them with test dependencies.
+The bindings in the ExampleTestModule override those for the same key in the production modules.
+This lets you replace just the dependencies you need with test ones without having to replicate the complete production configuration.
+Backticks must be used around override and with because they are reserved words in Scala.</p>
+
+<p>To use the dependencies you just need to add the <code>@Inject</code> annotation to the test class.
+You can inject values for variables, as in the example, or values for test method parameters, for instance <code>def notUnique(@Inject() idGenerator: UniqueIdGenerator)</code>, or into the constructor, for instance, <code>class ExampleTest @Inject() (idGenerator: UniqueIdGenerator)</code>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using Spring transaction support with Scala]]></title>

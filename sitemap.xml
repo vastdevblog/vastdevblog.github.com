@@ -17,11 +17,17 @@
         <lastmod>2012-03-18T11:13:53-05:00</lastmod>
     </url>
     <url>
+        <loc>
+            http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/
+        </loc>
+        <lastmod>2012-03-26T09:31:50-05:00</lastmod>
+    </url>
+    <url>
         <loc>http://vast.com/vastdevblog/blog/archives/</loc>
-        <lastmod>2012-03-18T11:13:53-05:00</lastmod>
+        <lastmod>2012-03-26T09:31:50-05:00</lastmod>
     </url>
     <url>
         <loc>http://vast.com/vastdevblog/</loc>
-        <lastmod>2012-03-18T11:13:53-05:00</lastmod>
+        <lastmod>2012-03-26T09:31:50-05:00</lastmod>
     </url>
 </urlset>
