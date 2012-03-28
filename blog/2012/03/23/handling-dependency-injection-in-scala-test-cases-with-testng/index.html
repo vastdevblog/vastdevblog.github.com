@@ -32,6 +32,18 @@ The two interesting &hellip;">
 <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 
   
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30412900-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
 
 </head>
 
@@ -100,6 +112,9 @@ The two interesting points are</p>
 <li>How in Guice do you override production dependencies with test ones when you want to execute a test case?</li>
 <li>How do you use TestNG with Scala?</li>
 </ul>
+
+
+<!-- more -->
 
 
 <p>Here&#8217;s a simple example showing how this works.</p>
@@ -217,6 +232,10 @@ Unfortunately you can&#8217;t inject parameters into test methods using Guice, y
   <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/" data-via="" data-counturl="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/" >Tweet</a>
   
   
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
   
 </div>
 
@@ -278,7 +297,24 @@ Unfortunately you can&#8217;t inject parameters into test methods using Guice, y
 
 
 
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
 
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
 
 
 

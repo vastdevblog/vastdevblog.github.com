@@ -4,7 +4,7 @@
   <title><![CDATA[Category: scala | Vast Development Blog]]></title>
   <link href="http://vast.com/vastdevblog/blog/categories/scala/atom.xml" rel="self"/>
   <link href="http://vast.com/vastdevblog/"/>
-  <updated>2012-03-26T14:09:54-05:00</updated>
+  <updated>2012-03-28T08:17:38-05:00</updated>
   <id>http://vast.com/vastdevblog/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -26,6 +26,9 @@ The two interesting points are</p>
 <li>How in Guice do you override production dependencies with test ones when you want to execute a test case?</li>
 <li>How do you use TestNG with Scala?</li>
 </ul>
+
+
+<!-- more -->
 
 
 <p>Here's a simple example showing how this works.</p>
