@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: spring | Vast Development Blog]]></title>
-  <link href="http://vast.com/vastdevblog/blog/categories/spring/atom.xml" rel="self"/>
-  <link href="http://vast.com/vastdevblog/"/>
-  <updated>2012-03-29T11:51:22-05:00</updated>
-  <id>http://vast.com/vastdevblog/</id>
+  <link href="http://vastdevblog.vast.com/blog/categories/spring/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-03-29T13:06:51-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Using Spring transaction support with Scala]]></title>
-    <link href="http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala/"/>
+    <link href="http://vastdevblog.vast.com/blog/2012/03/16/using-spring-transaction-support-with-scala/"/>
     <updated>2012-03-16T14:30:00-05:00</updated>
-    <id>http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala</id>
+    <id>http://vastdevblog.vast.com/blog/2012/03/16/using-spring-transaction-support-with-scala</id>
     <content type="html"><![CDATA[<p>What's the best way to use <a href="http://www.springsource.org/">Spring</a>'s <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html">transaction management</a> features from a Scala program? This is my second attempt to come up with an answer to that question.</p>
 
 <p>My preference for Spring transactions with Java is to use the <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html#transaction-declarative-annotations">@Transactional</a> annotation. I'd like to be able to achieve the same effect in Scala.</p>

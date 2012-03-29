@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: finagle | Vast Development Blog]]></title>
-  <link href="http://vast.com/vastdevblog/blog/categories/finagle/atom.xml" rel="self"/>
-  <link href="http://vast.com/vastdevblog/"/>
-  <updated>2012-03-29T11:51:22-05:00</updated>
-  <id>http://vast.com/vastdevblog/</id>
+  <link href="http://vastdevblog.vast.com/blog/categories/finagle/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-03-29T13:06:51-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Finagling]]></title>
-    <link href="http://vast.com/vastdevblog/blog/2012/03/10/finagling/"/>
+    <link href="http://vastdevblog.vast.com/blog/2012/03/10/finagling/"/>
     <updated>2012-03-10T16:08:00-06:00</updated>
-    <id>http://vast.com/vastdevblog/blog/2012/03/10/finagling</id>
+    <id>http://vastdevblog.vast.com/blog/2012/03/10/finagling</id>
     <content type="html"><![CDATA[<p>I've been playing with <a href="http://twitter.github.com/finagle/">Finagle</a>, or "Finagle, from Twitter" as the site refers to it, to see whether it will work for me as a framework to support a simple http rpc/rest server. The Finagle documentation is good but I wanted to explore in a complete simple example how I could implement</p>
 
 <ul>

@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: scala | Vast Development Blog]]></title>
-  <link href="http://vast.com/vastdevblog/blog/categories/scala/atom.xml" rel="self"/>
-  <link href="http://vast.com/vastdevblog/"/>
-  <updated>2012-03-29T11:51:22-05:00</updated>
-  <id>http://vast.com/vastdevblog/</id>
+  <link href="http://vastdevblog.vast.com/blog/categories/scala/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-03-29T13:06:51-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Handling Dependency Injection in Scala test cases with TestNG]]></title>
-    <link href="http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/"/>
+    <link href="http://vastdevblog.vast.com/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/"/>
     <updated>2012-03-23T15:46:00-05:00</updated>
-    <id>http://vast.com/vastdevblog/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng</id>
+    <id>http://vastdevblog.vast.com/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng</id>
     <content type="html"><![CDATA[<p>This is a short post about using <a href="http://code.google.com/p/google-guice/">Guice</a> dependency injection
 in Scala test cases that are configured with <a href="http://testng.org/doc/index.html">TestNG</a> annotations.
 The two interesting points are</p>
@@ -91,9 +91,9 @@ Unfortunately you can't inject parameters into test methods using Guice, you hav
   
   <entry>
     <title type="html"><![CDATA[Using Spring transaction support with Scala]]></title>
-    <link href="http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala/"/>
+    <link href="http://vastdevblog.vast.com/blog/2012/03/16/using-spring-transaction-support-with-scala/"/>
     <updated>2012-03-16T14:30:00-05:00</updated>
-    <id>http://vast.com/vastdevblog/blog/2012/03/16/using-spring-transaction-support-with-scala</id>
+    <id>http://vastdevblog.vast.com/blog/2012/03/16/using-spring-transaction-support-with-scala</id>
     <content type="html"><![CDATA[<p>What's the best way to use <a href="http://www.springsource.org/">Spring</a>'s <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html">transaction management</a> features from a Scala program? This is my second attempt to come up with an answer to that question.</p>
 
 <p>My preference for Spring transactions with Java is to use the <a href="http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/transaction.html#transaction-declarative-annotations">@Transactional</a> annotation. I'd like to be able to achieve the same effect in Scala.</p>
@@ -760,9 +760,9 @@ I think you should use an
   
   <entry>
     <title type="html"><![CDATA[Finagling]]></title>
-    <link href="http://vast.com/vastdevblog/blog/2012/03/10/finagling/"/>
+    <link href="http://vastdevblog.vast.com/blog/2012/03/10/finagling/"/>
     <updated>2012-03-10T16:08:00-06:00</updated>
-    <id>http://vast.com/vastdevblog/blog/2012/03/10/finagling</id>
+    <id>http://vastdevblog.vast.com/blog/2012/03/10/finagling</id>
     <content type="html"><![CDATA[<p>I've been playing with <a href="http://twitter.github.com/finagle/">Finagle</a>, or "Finagle, from Twitter" as the site refers to it, to see whether it will work for me as a framework to support a simple http rpc/rest server. The Finagle documentation is good but I wanted to explore in a complete simple example how I could implement</p>
 
 <ul>
