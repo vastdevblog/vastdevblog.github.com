@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: javascript | Vast Development Blog]]></title>
+  <link href="http://vastdevblog.vast.com/blog/categories/javascript/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-03-30T08:36:46-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
+  <author>
+    <name><![CDATA[vast.com]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Using the noscript Element to Hide HTML Elements on Page Load]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/03/29/using-the-noscript-element-to-hide-html-elements-on-page-load/"/>
+    <updated>2012-03-29T22:09:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/03/29/using-the-noscript-element-to-hide-html-elements-on-page-load</id>
+    <content type="html"><![CDATA[<p>Sometimes a simple use case leads to a neat technical trick, and this is exactly what this short post is about.</p>
+
+<p>This specific use case was quite simple, based on the following requirements:</p>
+
+<ul>
+<li>Show a simple search experience page that allows the end user to pick a value from a long list of options using a select element (e.g. the make of a car) to perform a search.</li>
+<li>Make the page search engine friendly by providing link elements for the top option values instead of a select element when JavaScript is not available.</li>
+<li>Serve the same HTML content to all clients regardless of user agent ids or capabilities (no cloaking or semi-cloaking).</li>
+</ul>
+
+
+<p>The requirements are straightforward and can be implemented using the <code>noscript</code> element as follows:</p>
+
+<!-- more -->
+
+
+<p>``` html
+Pick a make:</p>
+
+<p><select></p>
+
+<pre><code>&lt;option value="audi"&gt;Audi&lt;/option&gt;
+&lt;option value="bmw"&gt;BMW&lt;/option&gt;
+&lt;option value="chevrolet"&gt;Chevrolet&lt;/option&gt;
+...
+</code></pre>
+
+<p></select></p>
+
+<p><noscript></p>
+
+<pre><code>&lt;a href="..."&gt;Audi&lt;/a&gt;
+&lt;a href="..."&gt;BMW&lt;/a&gt;
+&lt;a href="..."&gt;Chevrolet&gt;
+...
+</code></pre>
+
+<p></noscript>
+```</p>
+
+<p>This looks fine when JavaScript is enabled (only the select element is rendered), but this isn't very good when JavaScript is disabled because both the select and link elements are rendered.</p>
+
+<p>The first idea was to initially hide the select element (with CSS) and then make it visible once the page was loaded (with JavaScript). I thought we could do a lot better than that and looked for a simple and efficient way to provide a better user experience in this case, and came up with the following solution: inject CSS to hide the select element using a <code>noscript</code> element within the <code>head</code> section on the document.</p>
+
+<p>``` html
+<head></p>
+
+<pre><code>&lt;noscript&gt;
+    &lt;style type="text/css"&gt;
+        .js-content { display: none; }
+    &lt;/style&gt;   
+&lt;/noscript&gt;
+</code></pre>
+
+<p></head></p>
+
+<p><body></p>
+
+<pre><code>...
+Pick a make:
+
+&lt;select class="js-content"&gt;
+    &lt;option value="audi"&gt;Audi&lt;/option&gt;
+    &lt;option value="bmw"&gt;BMW&lt;/option&gt;
+    &lt;option value="chevrolet"&gt;Chevrolet&lt;/option&gt;
+    ...
+&lt;/select&gt;
+
+&lt;noscript&gt;
+    &lt;a href="..."&gt;Audi&lt;/a&gt;
+    &lt;a href="..."&gt;BMW&lt;/a&gt;
+    &lt;a href="..."&gt;Chevrolet&gt;
+    ...
+&lt;/noscript&gt;
+...
+</code></pre>
+
+<p></body>
+```</p>
+
+<p>In addition to being very simple this has the advantage of being a pure CSS solution and works on all browsers that I could test on (including Internet Explorer 6). I also verified this was compliant with <a href="http://www.w3.org/TR/html5/the-noscript-element.html#the-noscript-element">HTML5</a>.</p>
+
+<p>While I'm not making the argument that this was a very good use case to begin with I hope this can be useful a useful trick for others - certainly I'll add it to my own bag of tricks.</p>
+]]></content>
+  </entry>
+  
+</feed>
