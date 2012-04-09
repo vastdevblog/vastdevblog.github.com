@@ -10,7 +10,7 @@
 
   <meta name="title" content=""/>
   
-  <meta name="description" content="Sometimes a simple use case leads to a neat technical trick, and this is exactly what this short post is about. This specific use case was quite &hellip;">
+  <meta name="description" content="There are many resources describing the life cycle of a view controller in iOS. This one differs in looking at the order of the the life cycles &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,63 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/04/08/uiviewcontroller-life-cycle/">UIViewController Life Cycle</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-04-08T17:03:00-05:00" pubdate data-updated="true">Apr 8<span>th</span>, 2012</time>  &bull; 
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
+ 
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>There are many resources describing the <a href="http://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/ViewLoadingandUnloading/ViewLoadingandUnloading.html">life cycle of a view controller in iOS</a>. This one differs in looking at the order of the the life cycles events of two UIViewControllers embedded in a UINavigationController. The way in which the events on the two controllers are interleaved is interesting.</p>
+
+<p>The main events are</p>
+
+<ul>
+<li>(void)viewWillAppear:(BOOL)animated</li>
+<li>(void)viewDidAppear:(BOOL)animated</li>
+<li>(void)viewWillDisappear:(BOOL)animated</li>
+<li>(void)viewDidDisappear:(BOOL)animated</li>
+</ul>
+
+
+<p>but I&#8217;ve also thrown in the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UINavigationController_Class/Reference/Reference.html">UINavigationControllerDelegate</a> methods and some of the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UITextFieldDelegate_Protocol/UITextFieldDelegate/UITextFieldDelegate.html">UITextFieldDelegate</a> methods.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/04/08/uiviewcontroller-life-cycle/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -359,6 +416,10 @@ The two interesting points are</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2012/04/08/uiviewcontroller-life-cycle/">UIViewController Life Cycle</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2012/03/29/using-the-noscript-element-to-hide-html-elements-on-page-load/">Using the noscript Element to Hide HTML Elements on Page Load</a>
       </li>
     
@@ -372,10 +433,6 @@ The two interesting points are</p>
     
       <li class="post">
         <a href="/blog/2012/03/10/finagling/">Finagling</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/02/12/rotating-to-show-different-ios-views/">Rotating to show different iOS views</a>
       </li>
     
   </ul>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: iOS | Vast Development Blog]]></title>
+  <title><![CDATA[Category: ios | Vast Development Blog]]></title>
   <link href="http://vastdevblog.vast.com/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-03-30T08:36:46-05:00</updated>
+  <updated>2012-04-08T21:00:06-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -14,135 +14,82 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Rotating to show different iOS views]]></title>
-    <link href="http://vastdevblog.vast.com/blog/2012/02/12/rotating-to-show-different-ios-views/"/>
-    <updated>2012-02-12T20:11:00-06:00</updated>
-    <id>http://vastdevblog.vast.com/blog/2012/02/12/rotating-to-show-different-ios-views</id>
-    <content type="html"><![CDATA[<p>In the tradition of explaining fairly simple things at great length this approach is based on the documentation from Apple describing <a href="https://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/RespondingtoDeviceOrientationChanges/RespondingtoDeviceOrientationChanges.html#//apple_ref/doc/uid/TP40007457-CH7-SW1">Creating an Alternate Landscape Interface</a> and various answers on <a href="http://stackoverflow.com/">stackoverflow</a>. It differs from the information I could find on the internet because the flow includes a navigation controller and uses a storyboard. The flow between the screens in the interface is shown in the diagram below.</p>
+    <title type="html"><![CDATA[UIViewController Life Cycle]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/04/08/uiviewcontroller-life-cycle/"/>
+    <updated>2012-04-08T17:03:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/04/08/uiviewcontroller-life-cycle</id>
+    <content type="html"><![CDATA[<p>There are many resources describing the <a href="http://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/ViewLoadingandUnloading/ViewLoadingandUnloading.html">life cycle of a view controller in iOS</a>. This one differs in looking at the order of the the life cycles events of two UIViewControllers embedded in a UINavigationController. The way in which the events on the two controllers are interleaved is interesting.</p>
 
-<p><img src="/images/2012-02-12-ios-views.png" alt="Flow" /></p>
+<p>The main events are</p>
 
-<p>There is a first screen, A, that has two alternate views, one portrait and one landscape. These can't be created using the springs and struts layout tools. Rotating the  phone while screen A is showing should switch between the two views. Tapping some element on screen A, in either view, transitions to screen B. Screen B handles rotation itself by redrawing its interface in drawRect:. Going back from B should show the correct version of A. There's a navigation controller wrapping the whole interface that provides the navigation bar and button in view B to go back to view A.</p>
+<ul>
+<li>(void)viewWillAppear:(BOOL)animated</li>
+<li>(void)viewDidAppear:(BOOL)animated</li>
+<li>(void)viewWillDisappear:(BOOL)animated</li>
+<li>(void)viewDidDisappear:(BOOL)animated</li>
+</ul>
+
+
+<p>but I've also thrown in the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UINavigationController_Class/Reference/Reference.html">UINavigationControllerDelegate</a> methods and some of the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UITextFieldDelegate_Protocol/UITextFieldDelegate/UITextFieldDelegate.html">UITextFieldDelegate</a> methods.</p>
 
 <!-- more -->
 
 
-<p>The implementation uses the navigation controller's pushViewController:animated: and popViewControllerAnimated: methods to display the portrait and landscape views. There is a single parent class, AViewController, containing common functionality, with two subclasses, APortraitViewController and ALandscapeViewController. XCode can be used to layout the different portrait and landscape views. The initial state is in portrait orientation (applications always start in portrait orientation and are sent rotation messages if required) so the root view controller for the navigation controller is APortraitViewController. When the orientation changes to landscape ALandscapeViewController is pushed and when it changes back to portrait ALandscapeViewController is popped. APortrait is never removed it's just hidden by ALandscape.</p>
+<p>The layout of the interface is shown below.</p>
 
-<p><img src="/images/2012-02-12-ios-views-nav.png" alt="Push and Pop" /></p>
+<p><img src="/images/2012-04-08-interface-layout.png" alt="Layout" /></p>
 
-<p>Before looking at the code to push and pop the views we have to  consider how to deal with view B, and what the storyboard looks like. View B presents some problems because you can get get to view B from the landscape version of view A. While showing view B you can rotate to portrait, and press the back button, at which point you need to go back to A. At this point you want the APortrait view shown. This is the path, 1, 2, 3, 4 in the diagram below.</p>
+<p>Pressing button B on the first screen A invokes a segue to go to screen B. On B there is a text field. The use case I experimented with was</p>
 
-<p><img src="/images/2012-02-12-ios-views-rotate.png" alt="Rotating in view B" /></p>
+<ul>
+<li>Start app</li>
+<li>Tap button B</li>
+<li>Tap text field on B screen</li>
+<li>Tap back button in navigation bar without dismissing keyboard first.</li>
+<li>Close app.</li>
+</ul>
 
-<p>The solution to this is quite simple. At appropriate times, to be described below, check whether the portrait view is being show in landscape orientation, or the landscape view in portrait orientation and perform the appropriate push or pop.</p>
 
-<p>Finally, the last thing before the code, the picture below shows how the storyboard laid out.</p>
+<p>The sequence of events is shown as the output of NSLog statements I added to the code.</p>
 
-<p><img src="/images/2012-02-12-ios-views-storyboard.png" alt="Storyboard layout" /></p>
+<p><code>text Sequence of life cycle events
+ &lt;A: 0x6c11b10&gt; viewDidLoad
+ &lt;A: 0x6c11b10&gt; viewWillAppear
+ &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;A: 0x6c11b10&gt; viewDidAppear
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;A: 0x6c11b10&gt; prepareForSegue from &lt;A: 0x6c11b10&gt; to &lt;B: 0x6c16980&gt;
+ &lt;B: 0x6c16980&gt; viewDidLoad
+ &lt;A: 0x6c11b10&gt; viewWillDisappear
+ &lt;B: 0x6c16980&gt; viewWillAppear
+ &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;B: 0x6c16980&gt;
+ &lt;A: 0x6c11b10&gt; viewDidDisappear
+ &lt;B: 0x6c16980&gt; viewDidAppear
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;B: 0x6c16980&gt;
+ &lt;B: 0x6c16980&gt; textFieldShouldBeginEditing
+ &lt;B: 0x6c16980&gt; textFieldDidBeginEditing
+ &lt;B: 0x6c16980&gt; viewWillDisappear
+ &lt;A: 0x6c11b10&gt; viewWillAppear
+ &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;B: 0x6c16980&gt; textFieldShouldEndEditing
+ &lt;B: 0x6c16980&gt; textFieldDidEndEditing
+ &lt;B: 0x6c16980&gt; viewDidDisappear
+ &lt;A: 0x6c11b10&gt; viewDidAppear
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+</code></p>
 
-<p>The ALandscape view controller is not connected to APortrait. It's given an identifier that's used to load it from code. Both APortrait and ALandscape use push segues to go to B.</p>
+<p>Notes.</p>
 
-<p>Here's the code that swaps the portrait and landscape versions of the A view controller. It's in the APortraitViewController class, because an instance of that class is always in memory, so self refers to APortraitViewController. Instances of the ALandscapeViewController are created as needed for pushing and then destroyed when they are popped. It's important to set the model and any other properties for the landscape instance each time one is created.</p>
+<ul>
+<li>I added A as the UINavigationControllerDelegate in A's viewDidLoad method. Interestingly you see two occurrences of didShowViewController for A, one on line 4 and one on line 6. I think the first one, on line 4 is not correct as A's viewDidAppear method has not yet executed.</li>
+<li>When the button is pressed the first method called is prepareForSegue (line 7). At this point B exists but its view has not yet been loaded. If you're using segues then you're probably going to be calling methods on the controller you're seguing to, remember that that controller has no view when you're doing this.</li>
+<li>The sequence of events on lines 8 through 14 is interesing. First B's view is loaded, then A is told it will disappear. Next, before A actually does disappear B is told it will appear. Then the navigation controller delegate is told that B will be shown and only after that is A told it has disappeared and then B that it has appeared. The point, for me at least, is that you have to think about the interleaving of events as much as the sequence. This becomes clearer when we look at the text editing sequence.</li>
+<li>Starting on line 17 is the sequence of events that happens when you press the back button to return from screen B while the keyboard for the text field is still showing. Notice all of the things that happen before the textFieldDidEndEditing method is called on line 21. If you're using textFieldDidEndEditing to update properties you won't have access to the updated values from the text field till viewDidDisappear. So, given that you have to use B's viewDidDisappear to access text field values if you're updating in B an object passed from A that object won't be updated till A's viewDidAppear method is called. If you use A's viewWillAppear method you'll see the un-updated values.</li>
+</ul>
 
-<p>``` objective-c Swapping view controllers
-- (void)swapControllersIfNeeded
-{</p>
 
-<pre><code>UIDeviceOrientation deviceOrientation = [UIDevice currentDevice].orientation;
-
-// Check that we're not showing the wrong controller for the orientation.
-if (UIDeviceOrientationIsLandscape(deviceOrientation) &amp;&amp; 
-    self.navigationController.visibleViewController == self) 
-{ 
-    // Orientation is landscape but the visible controller is this one,
-    // which is the portrait one.
-    // Create new instance of landscape controller from the storyboard.
-    // Use a property to keep track of it because we need it for
-    // the check in the else branch.
-    self.landscapeViewController = 
-        [self.storyboard instantiateViewControllerWithIdentifier:@"LandscapeViewController"];
-    // TODO - Set the landscape controller's model from the model we have.
-    // self.landscapeViewController.model = self.model;
-    // Push the new controller rather than use a segue so that we can do it 
-    // without animation.
-    [self.navigationController pushViewController:self.landscapeViewController 
-                                         animated:NO];             
-} 
-else if (UIDeviceOrientationIsPortrait(deviceOrientation) &amp;&amp; 
-         self.navigationController.visibleViewController == self.landscapeViewController) 
-{
-    // Orientation is portrait but the visible controller is
-    // the landscape controller. Pop the top controller, we
-    // know the portrait controller, self, is the next one down.
-    [self.navigationController popViewControllerAnimated:NO];
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>There are two occasions when swapControllersIfNeeded must be called. First, when the orientation changes, which will handle the case where ALandscape or APortrait is showing and must be swapped. Second, when the navigation view controller shows a new view controller. This is to take care of the case where rotation takes place while view B is showing.</p>
-
-<p>To deal with orientation changes register, in awakeFromNib, for orientation change events and implement a method handle them.</p>
-
-<p>``` objective-c Responding to orientation changes.</p>
-
-<pre><code>// In awakeFromNib
-[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-[[NSNotificationCenter defaultCenter] addObserver:self
-                                         selector:@selector(orientationChanged:)
-                                             name:UIDeviceOrientationDidChangeNotification
-                                           object:nil];
-</code></pre>
-
-<p>// Method to handle orientation changes.
-- (void)orientationChanged:(NSNotification *)notification
-{</p>
-
-<pre><code>[self swapControllersIfNeeded];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>For the navigation controller case APortraitViewController must conform to the UINavigationControllerDelegate protocol and implement one of its methods.</p>
-
-<p>``` objective-c Responding to navigation controller view changes</p>
-
-<pre><code>// In awakeFromNib register as the delegate.
-self.navigationController.delegate = self;
-</code></pre>
-
-<p>// Called when a new view is shown.
-- (void)navigationController:(UINavigationController *)navigationController</p>
-
-<pre><code>   didShowViewController:(UIViewController *)viewController 
-                animated:(BOOL)animated 
-</code></pre>
-
-<p>{</p>
-
-<pre><code>// May be coming back from another controller to find we're
-// showing the wrong controller for the orientation.
-[self swapControllersIfNeeded];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>One final wrinkle is that we don't want a back button appearing at the top of the landscape view pointing back to the portrait view. To prevent this the Shows Navigation Bar property for the Navigation Controller must be unchecked. However, we do want a back button to go from view B back to view A so in the viewWillAppear: method of the B view controller the navigation bar is unhidden. If you want APortrait and ALandscape views can have title bars added to them so their appearance is as it would be if Shows Navigation Bar was checked.</p>
-
-<p>``` objective-c Showing the navigation bar
-- (void)viewWillAppear:(BOOL)animated
-{</p>
-
-<pre><code>[self.navigationController setNavigationBarHidden:NO
-                                         animated:animated];
-</code></pre>
-
-<p>}
-```</p>
+<p>I suppose the larger point is that it's very easy with storyboards to set up this sort of test case to explore when the actual sequence of event is, and it's sometimes not what you expect.</p>
 ]]></content>
   </entry>
   

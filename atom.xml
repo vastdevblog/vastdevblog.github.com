@@ -4,7 +4,7 @@
   <title><![CDATA[Vast Development Blog]]></title>
   <link href="http://vastdevblog.vast.com/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-03-30T08:36:46-05:00</updated>
+  <updated>2012-04-08T21:00:06-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -12,6 +12,110 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[UIViewController Life Cycle]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/04/08/uiviewcontroller-life-cycle/"/>
+    <updated>2012-04-08T17:03:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/04/08/uiviewcontroller-life-cycle</id>
+    <content type="html"><![CDATA[<p>There are many resources describing the <a href="http://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/ViewLoadingandUnloading/ViewLoadingandUnloading.html">life cycle of a view controller in iOS</a>. This one differs in looking at the order of the the life cycles events of two UIViewControllers embedded in a UINavigationController. The way in which the events on the two controllers are interleaved is interesting.</p>
+
+<p>The main events are</p>
+
+<ul>
+<li>(void)viewWillAppear:(BOOL)animated</li>
+<li>(void)viewDidAppear:(BOOL)animated</li>
+<li>(void)viewWillDisappear:(BOOL)animated</li>
+<li>(void)viewDidDisappear:(BOOL)animated</li>
+</ul>
+
+
+<p>but I&#8217;ve also thrown in the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UINavigationController_Class/Reference/Reference.html">UINavigationControllerDelegate</a> methods and some of the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UITextFieldDelegate_Protocol/UITextFieldDelegate/UITextFieldDelegate.html">UITextFieldDelegate</a> methods.</p>
+
+<!-- more -->
+
+
+<p>The layout of the interface is shown below.</p>
+
+<p><img src="http://vastdevblog.vast.com/images/2012-04-08-interface-layout.png" alt="Layout" /></p>
+
+<p>Pressing button B on the first screen A invokes a segue to go to screen B. On B there is a text field. The use case I experimented with was</p>
+
+<ul>
+<li>Start app</li>
+<li>Tap button B</li>
+<li>Tap text field on B screen</li>
+<li>Tap back button in navigation bar without dismissing keyboard first.</li>
+<li>Close app.</li>
+</ul>
+
+
+<p>The sequence of events is shown as the output of NSLog statements I added to the code.</p>
+
+<figure class='code'><figcaption><span>Sequence of life cycle events</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'> &lt;A: 0x6c11b10&gt; viewDidLoad
+</span><span class='line'> &lt;A: 0x6c11b10&gt; viewWillAppear
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;A: 0x6c11b10&gt;
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+</span><span class='line'> &lt;A: 0x6c11b10&gt; viewDidAppear
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+</span><span class='line'> &lt;A: 0x6c11b10&gt; prepareForSegue from &lt;A: 0x6c11b10&gt; to &lt;B: 0x6c16980&gt;
+</span><span class='line'> &lt;B: 0x6c16980&gt; viewDidLoad
+</span><span class='line'> &lt;A: 0x6c11b10&gt; viewWillDisappear
+</span><span class='line'> &lt;B: 0x6c16980&gt; viewWillAppear
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;B: 0x6c16980&gt;
+</span><span class='line'> &lt;A: 0x6c11b10&gt; viewDidDisappear
+</span><span class='line'> &lt;B: 0x6c16980&gt; viewDidAppear
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;B: 0x6c16980&gt;
+</span><span class='line'> &lt;B: 0x6c16980&gt; textFieldShouldBeginEditing
+</span><span class='line'> &lt;B: 0x6c16980&gt; textFieldDidBeginEditing
+</span><span class='line'> &lt;B: 0x6c16980&gt; viewWillDisappear
+</span><span class='line'> &lt;A: 0x6c11b10&gt; viewWillAppear
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;A: 0x6c11b10&gt;
+</span><span class='line'> &lt;B: 0x6c16980&gt; textFieldShouldEndEditing
+</span><span class='line'> &lt;B: 0x6c16980&gt; textFieldDidEndEditing
+</span><span class='line'> &lt;B: 0x6c16980&gt; viewDidDisappear
+</span><span class='line'> &lt;A: 0x6c11b10&gt; viewDidAppear
+</span><span class='line'> &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notes.</p>
+
+<ul>
+<li>I added A as the UINavigationControllerDelegate in A&#8217;s viewDidLoad method. Interestingly you see two occurrences of didShowViewController for A, one on line 4 and one on line 6. I think the first one, on line 4 is not correct as A&#8217;s viewDidAppear method has not yet executed.</li>
+<li>When the button is pressed the first method called is prepareForSegue (line 7). At this point B exists but its view has not yet been loaded. If you&#8217;re using segues then you&#8217;re probably going to be calling methods on the controller you&#8217;re seguing to, remember that that controller has no view when you&#8217;re doing this.</li>
+<li>The sequence of events on lines 8 through 14 is interesing. First B&#8217;s view is loaded, then A is told it will disappear. Next, before A actually does disappear B is told it will appear. Then the navigation controller delegate is told that B will be shown and only after that is A told it has disappeared and then B that it has appeared. The point, for me at least, is that you have to think about the interleaving of events as much as the sequence. This becomes clearer when we look at the text editing sequence.</li>
+<li>Starting on line 17 is the sequence of events that happens when you press the back button to return from screen B while the keyboard for the text field is still showing. Notice all of the things that happen before the textFieldDidEndEditing method is called on line 21. If you&#8217;re using textFieldDidEndEditing to update properties you won&#8217;t have access to the updated values from the text field till viewDidDisappear. So, given that you have to use B&#8217;s viewDidDisappear to access text field values if you&#8217;re updating in B an object passed from A that object won&#8217;t be updated till A&#8217;s viewDidAppear method is called. If you use A&#8217;s viewWillAppear method you&#8217;ll see the un-updated values.</li>
+</ul>
+
+
+<p>I suppose the larger point is that it&#8217;s very easy with storyboards to set up this sort of test case to explore when the actual sequence of event is, and it&#8217;s sometimes not what you expect.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using the noscript Element to Hide HTML Elements on Page Load]]></title>
