@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: logback | Vast Development Blog]]></title>
+  <link href="http://vastdevblog.vast.com/blog/categories/logback/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-04-18T11:37:36-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
+  <author>
+    <name><![CDATA[vast.com]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Using SyslogAppender on OS X]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x/"/>
+    <updated>2012-04-18T09:48:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x</id>
+    <content type="html"><![CDATA[<p>I'm using <a href="http://logback.qos.ch/apidocs/ch/qos/logback/classic/net/SyslogAppender.html">ch.qos.logback.classic.net.SyslogAppender</a>
+to send messages to syslog and I need to be able to test the configuration on OS X. There are various sources of
+information on how to do this but no comprehensive explanation of what to do for OS X 10.7 so here's my four step
+process.</p>
+
+<!-- more -->
+
+
+<h3>Choose the syslog facility to log to</h3>
+
+<p>The facility an information field associated with a syslog message.
+It is used, together with the priority, in the syslog configuration to separate the processing of different messages.
+For instance, to send all informational messages from the mail system to a one log file and all critical messages from cron to another.
+Choosing the facility to use is important. You want to pick one that isn't used by any, or many, other systems so that you can separate your log messages from others.
+I picked LOCAL6 based on <a href="http://serverfault.com/questions/115923/which-program-defaults-uses-syslog-local0-7-facilities">this answer on serverfault</a>. It's easy to change though once you get the system working.</p>
+
+<h3>Configure syslog to log your messages to a file</h3>
+
+<p>The SyslogAppender will send logged messages to the syslog daemon (syslogd) and that will use the configuration in <a href="http://linux.die.net/man/5/syslog.conf">/etc/syslog.conf</a> to decide what to do with them next.
+You'll need to use sudo to edit the config file because only root has write access to it.
+I used sudo emacs /etc/syslog.conf.
+For my testing purposes I just want to log to a file so I added a line to direct messages from the local6 at all priority levels to a vast.log file.</p>
+
+<p><code>
+local6.*                        /var/log/vast.log
+</code></p>
+
+<p>At this point you should test your syslog configuration using the <a href="http://www.unix.com/man-page/OSX/1/LOGGER/">logger</a> command line program.
+First you have to get syslogd to reload its configuration using the two commands below.</p>
+
+<p><code>
+sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist
+sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</code></p>
+
+<p>Now you can use logger command to send a message. Here I'm sending an info priority message to the local6 faciltiy.</p>
+
+<p><code>
+logger -p local6.info "test message"
+</code></p>
+
+<p>In the log file you should see something like</p>
+
+<p><code>
+Apr 18 10:32:45 Alexs-MacBook-Pro alexmoffat[3724]: test message
+</code></p>
+
+<h3>Configure syslog to accept messages via a network socket</h3>
+
+<p>SyslogAppender uses the java.net.Datagram class to send messages to syslog.
+As installed on OS X syslog does not accept messages over network connections so the configuration must be changed.
+For this you have to edit the /System/Library/LaunchDaemons/com.apple.syslogd.plist file.
+This, unfortunately from the point of view of editability, is only writable by root and is in binary not xml format.
+In earlier versions of OS X the format was xml and the required elements were present but commented out, in 10.7 they are not present.
+I had to use the <a href="http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man8/PlistBuddy.8.html">PlistBuddy</a> program supplied by Apple to make the required edits.
+You can see the sequence of commands I used below. The intention is to add a NetworkListener dictionary entry
+with with SockServiceName and SockType properties.</p>
+
+<p>```
+sudo /usr/libexec/PlistBuddy /System/Library/LaunchDaemons/com.apple.syslogd.plist</p>
+
+<p>Command: Print :Sockets
+Dict {</p>
+
+<pre><code>AppleSystemLogger = Dict {
+    SockPathName = /var/run/asl_input
+    SockPathMode = 438
+}
+BSDSystemLogger = Dict {
+    SockPathName = /var/run/syslog
+    SockType = dgram
+    SockPathMode = 438
+}
+</code></pre>
+
+<p>}
+Command: Add :Sockets:NetworkListener dict
+Command: Add :Sockets:NetworkListener:SockServiceName string "syslog"
+Command: Add :Sockets:NetworkListener:SockType string "dgram"
+Command: Print :Sockets
+Dict {</p>
+
+<pre><code>NetworkListener = Dict {
+    SockServiceName = syslog
+    SockType = dgram
+}
+AppleSystemLogger = Dict {
+    SockPathName = /var/run/asl_input
+    SockPathMode = 438
+}
+BSDSystemLogger = Dict {
+    SockPathName = /var/run/syslog
+    SockType = dgram
+    SockPathMode = 438
+}
+</code></pre>
+
+<p>}
+Command: Save
+```</p>
+
+<p>After making the changes above you have to reload the syslog configuration again as you
+did after modifying syslog.conf.</p>
+
+<p><code>
+sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist
+sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</code></p>
+
+<h3>Configure the SyslogAppender</h3>
+
+<p>The logback manual has <a href="http://logback.qos.ch/manual/appenders.html#SyslogAppender">information on how to configure the SyslogAppender</a>.
+An appropriate example configuration for my testing is.</p>
+
+<p>```
+  <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender"></p>
+
+<pre><code>&lt;syslogHost&gt;localhost&lt;/syslogHost&gt;
+&lt;facility&gt;LOCAL6&lt;/facility&gt;
+&lt;suffixPattern&gt;%-5level[%thread] %logger{1} - %msg&lt;/suffixPattern&gt;
+</code></pre>
+
+<p>  </appender>
+```</p>
+
+<h3>Test</h3>
+
+<p>Finally, give this a test this by running you app and you should see messages appearing in the
+log file you configured in /etc/syslogd.conf</p>
+
+<h3>Acknowledgements</h3>
+
+<p>I pulled together the information for this post from a number of sources on the web.
+In addition to those linked to in the post the original inspiration and flow is from
+<a href="http://kreskasnotes.blogspot.com/2010/03/fun-with-syslogappender.html">Fun with SyslogAppender</a>,
+information about what needs to be added to the com.apple.syslogd.plist came from
+<a href="http://compgroups.net/comp.sys.mac.system/syslogd-on-10.6-enabling-udp-listening-on/199907">Syslogd on 10.6: enabling UDP listening on 514</a></p>
+]]></content>
+  </entry>
+  
+</feed>

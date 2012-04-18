@@ -1,0 +1,418 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Using SyslogAppender on OS X - Vast Development Blog</title>
+  <meta name="author" content="vast.com">
+
+  <meta name="title" content="Using SyslogAppender on OS X"/>
+  
+  <meta name="description" content="I&#8217;m using ch.qos.logback.classic.net.SyslogAppender
+to send messages to syslog and I need to be able to test the configuration on OS X. There &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Vast Development Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30412900-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Vast Development Blog</a></h1>
+  
+    <h2>The vast.com development blog.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:vastdevblog.vast.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Using SyslogAppender on OS X</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-04-18T09:48:00-05:00" pubdate data-updated="true">Apr 18<span>th</span>, 2012</time> 
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I&#8217;m using <a href="http://logback.qos.ch/apidocs/ch/qos/logback/classic/net/SyslogAppender.html">ch.qos.logback.classic.net.SyslogAppender</a>
+to send messages to syslog and I need to be able to test the configuration on OS X. There are various sources of
+information on how to do this but no comprehensive explanation of what to do for OS X 10.7 so here&#8217;s my four step
+process.</p>
+
+<!-- more -->
+
+
+<h3>Choose the syslog facility to log to</h3>
+
+<p>The facility an information field associated with a syslog message.
+It is used, together with the priority, in the syslog configuration to separate the processing of different messages.
+For instance, to send all informational messages from the mail system to a one log file and all critical messages from cron to another.
+Choosing the facility to use is important. You want to pick one that isn&#8217;t used by any, or many, other systems so that you can separate your log messages from others.
+I picked LOCAL6 based on <a href="http://serverfault.com/questions/115923/which-program-defaults-uses-syslog-local0-7-facilities">this answer on serverfault</a>. It&#8217;s easy to change though once you get the system working.</p>
+
+<h3>Configure syslog to log your messages to a file</h3>
+
+<p>The SyslogAppender will send logged messages to the syslog daemon (syslogd) and that will use the configuration in <a href="http://linux.die.net/man/5/syslog.conf">/etc/syslog.conf</a> to decide what to do with them next.
+You&#8217;ll need to use sudo to edit the config file because only root has write access to it.
+I used sudo emacs /etc/syslog.conf.
+For my testing purposes I just want to log to a file so I added a line to direct messages from the local6 at all priority levels to a vast.log file.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>local6.*                     /var/log/vast.log</span></code></pre></td></tr></table></div></figure>
+
+
+<p>At this point you should test your syslog configuration using the <a href="http://www.unix.com/man-page/OSX/1/LOGGER/">logger</a> command line program.
+First you have to get syslogd to reload its configuration using the two commands below.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</span><span class='line'>sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now you can use logger command to send a message. Here I&#8217;m sending an info priority message to the local6 faciltiy.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>logger -p local6.info "test message"</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the log file you should see something like</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Apr 18 10:32:45 Alexs-MacBook-Pro alexmoffat[3724]: test message</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Configure syslog to accept messages via a network socket</h3>
+
+<p>SyslogAppender uses the java.net.Datagram class to send messages to syslog.
+As installed on OS X syslog does not accept messages over network connections so the configuration must be changed.
+For this you have to edit the /System/Library/LaunchDaemons/com.apple.syslogd.plist file.
+This, unfortunately from the point of view of editability, is only writable by root and is in binary not xml format.
+In earlier versions of OS X the format was xml and the required elements were present but commented out, in 10.7 they are not present.
+I had to use the <a href="http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man8/PlistBuddy.8.html">PlistBuddy</a> program supplied by Apple to make the required edits.
+You can see the sequence of commands I used below. The intention is to add a NetworkListener dictionary entry
+with with SockServiceName and SockType properties.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo /usr/libexec/PlistBuddy /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</span><span class='line'>
+</span><span class='line'>Command: Print :Sockets
+</span><span class='line'>Dict {
+</span><span class='line'>    AppleSystemLogger = Dict {
+</span><span class='line'>        SockPathName = /var/run/asl_input
+</span><span class='line'>      SockPathMode = 438
+</span><span class='line'>    }
+</span><span class='line'>    BSDSystemLogger = Dict {
+</span><span class='line'>        SockPathName = /var/run/syslog
+</span><span class='line'>      SockType = dgram
+</span><span class='line'>      SockPathMode = 438
+</span><span class='line'>    }
+</span><span class='line'>}
+</span><span class='line'>Command: Add :Sockets:NetworkListener dict
+</span><span class='line'>Command: Add :Sockets:NetworkListener:SockServiceName string "syslog"
+</span><span class='line'>Command: Add :Sockets:NetworkListener:SockType string "dgram"
+</span><span class='line'>Command: Print :Sockets
+</span><span class='line'>Dict {
+</span><span class='line'>    NetworkListener = Dict {
+</span><span class='line'>        SockServiceName = syslog
+</span><span class='line'>        SockType = dgram
+</span><span class='line'>    }
+</span><span class='line'>    AppleSystemLogger = Dict {
+</span><span class='line'>        SockPathName = /var/run/asl_input
+</span><span class='line'>        SockPathMode = 438
+</span><span class='line'>    }
+</span><span class='line'>    BSDSystemLogger = Dict {
+</span><span class='line'>        SockPathName = /var/run/syslog
+</span><span class='line'>        SockType = dgram
+</span><span class='line'>        SockPathMode = 438
+</span><span class='line'>    }
+</span><span class='line'>}
+</span><span class='line'>Command: Save</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After making the changes above you have to reload the syslog configuration again as you
+did after modifying syslog.conf.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</span><span class='line'>sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Configure the SyslogAppender</h3>
+
+<p>The logback manual has <a href="http://logback.qos.ch/manual/appenders.html#SyslogAppender">information on how to configure the SyslogAppender</a>.
+An appropriate example configuration for my testing is.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  &lt;appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender"&gt;
+</span><span class='line'>    &lt;syslogHost&gt;localhost&lt;/syslogHost&gt;
+</span><span class='line'>    &lt;facility&gt;LOCAL6&lt;/facility&gt;
+</span><span class='line'>    &lt;suffixPattern&gt;%-5level[%thread] %logger{1} - %msg&lt;/suffixPattern&gt;
+</span><span class='line'>  &lt;/appender&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Test</h3>
+
+<p>Finally, give this a test this by running you app and you should see messages appearing in the
+log file you configured in /etc/syslogd.conf</p>
+
+<h3>Acknowledgements</h3>
+
+<p>I pulled together the information for this post from a number of sources on the web.
+In addition to those linked to in the post the original inspiration and flow is from
+<a href="http://kreskasnotes.blogspot.com/2010/03/fun-with-syslogappender.html">Fun with SyslogAppender</a>,
+information about what needs to be added to the com.apple.syslogd.plist came from
+<a href="http://compgroups.net/comp.sys.mac.system/syslogd-on-10.6-enabling-udp-listening-on/199907">Syslogd on 10.6: enabling UDP listening on 514</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-04-18T09:48:00-05:00" pubdate data-updated="true">Apr 18<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/logback/'>logback</a>, <a class='category' href='/blog/categories/osx/'>osx</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x/" data-via="" data-counturl="http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x/" >Tweet</a>
+  
+  
+  <g:plusone size="medium" annotation="bubble" width="200" href="http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x/"></g:plusone>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/04/16/ranking-apache-pig-tuples/" title="Previous Post: Ranking Apache Pig Tuples with a Python UDF">&laquo; Ranking Apache Pig Tuples with a Python UDF</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/04/18/using-syslogappender-on-os-x/">Using SyslogAppender on OS X</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/04/16/ranking-apache-pig-tuples/">Ranking Apache Pig Tuples with a Python UDF</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/04/08/uiviewcontroller-life-cycle/">UIViewController Life Cycle</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/03/29/using-the-noscript-element-to-hide-html-elements-on-page-load/">Using the noscript Element to Hide HTML Elements on Page Load</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/">Handling Dependency Injection in Scala test cases with TestNG</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - vast.com -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
