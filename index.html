@@ -10,8 +10,8 @@
 
   <meta name="title" content=""/>
   
-  <meta name="description" content="I&#8217;m using ch.qos.logback.classic.net.SyslogAppender
-to send messages to syslog and I need to be able to test the configuration on OS X. There &hellip;">
+  <meta name="description" content="Quick post to document the solution, without the underlying root cause, to an exception.
+The setup is a client implemented with the JAX-WS reference &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +78,61 @@ to send messages to syslog and I need to be able to test the configuration on OS
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/">ParseError - Premature EOF - Java WebServices Client</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-06T20:12:00-05:00" pubdate data-updated="true">May 6<span>th</span>, 2012</time>  &bull; 
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
+ 
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Quick post to document the solution, without the underlying root cause, to an exception.
+The setup is a client implemented with the JAX-WS reference implementation in Java 6 (JAX-WS RI 2.1.6 in JDK 6) calling a server also using JAX-WS hosted by Jetty using the <a href="http://jectbd.com/?p=1624">jetty-jaxws2spi package</a>.
+Setup as normal I get an exception in the client when it tries to parse the response from the server.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>com.sun.xml.internal.ws.streaming.XMLStreamReaderException: XML reader error: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[1,507]
+</span><span class='line'>Message: Premature EOF</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -511,6 +566,10 @@ The two interesting points are</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/">ParseError - Premature EOF - Java WebServices Client</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2012/04/18/using-syslogappender-on-os-x/">Using SyslogAppender on OS X</a>
       </li>
     
@@ -524,10 +583,6 @@ The two interesting points are</p>
     
       <li class="post">
         <a href="/blog/2012/03/29/using-the-noscript-element-to-hide-html-elements-on-page-load/">Using the noscript Element to Hide HTML Elements on Page Load</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/">Handling Dependency Injection in Scala test cases with TestNG</a>
       </li>
     
   </ul>
