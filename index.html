@@ -10,8 +10,7 @@
 
   <meta name="title" content=""/>
   
-  <meta name="description" content="Quick post to document the solution, without the underlying root cause, to an exception.
-The setup is a client implemented with the JAX-WS reference &hellip;">
+  <meta name="description" content="We use TestNG with the Maven Failsafe Plugin to implement integration tests for our Java platform services. For this specific platform service we&# &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +77,61 @@ The setup is a client implemented with the JAX-WS reference &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/">Generating Unique JUnit Test Names With TestNG Data Providers</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-14T19:35:00-05:00" pubdate data-updated="true">May 14<span>th</span>, 2012</time>  &bull; 
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Olivier Modica <omodica@vast.com></span></span>
+ 
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>We use <a href="http://www.testng.org/">TestNG</a> with the <a href="http://maven.apache.org/plugins/maven-failsafe-plugin/">Maven Failsafe Plugin</a> to implement integration tests for our Java platform services.</p>
+
+<p>For this specific platform service we&#8217;ve defined a set of functional test suites each containing between a few and a few hundred test payloads and expected results, with each test payload and expected result pair constituting one logical unit test. Each TestNG test would run a single functional test suite, iterating over all test pairs &mdash; so while we may have hundreds of unit tests the TestNG reports would only show one test per functional test suite and would fail the entire functional test suite if a single unit test within failed.</p>
+
+<p>This really wasn&#8217;t ideal for a couple of reasons:</p>
+
+<ul>
+<li>Since each unit test is independent from each other it makes little sense for a single unit test to fail all the unit tests within the functional test suite</li>
+<li>Test reports wouldn&#8217;t adequately show the number of unit tests which succeeded, failed or were skipped</li>
+</ul>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -566,6 +620,10 @@ The two interesting points are</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/">Generating Unique JUnit Test Names with TestNG Data Providers</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/">ParseError - Premature EOF - Java WebServices Client</a>
       </li>
     
@@ -579,10 +637,6 @@ The two interesting points are</p>
     
       <li class="post">
         <a href="/blog/2012/04/08/uiviewcontroller-life-cycle/">UIViewController Life Cycle</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/03/29/using-the-noscript-element-to-hide-html-elements-on-page-load/">Using the noscript Element to Hide HTML Elements on Page Load</a>
       </li>
     
   </ul>

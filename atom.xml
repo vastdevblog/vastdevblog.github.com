@@ -4,7 +4,7 @@
   <title><![CDATA[Vast Development Blog]]></title>
   <link href="http://vastdevblog.vast.com/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-05-06T21:13:52-05:00</updated>
+  <updated>2012-05-15T07:44:08-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -12,6 +12,332 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Generating Unique JUnit Test Names with TestNG Data Providers]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/"/>
+    <updated>2012-05-14T19:35:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers</id>
+    <content type="html"><![CDATA[<p>We use <a href="http://www.testng.org/">TestNG</a> with the <a href="http://maven.apache.org/plugins/maven-failsafe-plugin/">Maven Failsafe Plugin</a> to implement integration tests for our Java platform services.</p>
+
+<p>For this specific platform service we&#8217;ve defined a set of functional test suites each containing between a few and a few hundred test payloads and expected results, with each test payload and expected result pair constituting one logical unit test. Each TestNG test would run a single functional test suite, iterating over all test pairs &mdash; so while we may have hundreds of unit tests the TestNG reports would only show one test per functional test suite and would fail the entire functional test suite if a single unit test within failed.</p>
+
+<p>This really wasn&#8217;t ideal for a couple of reasons:</p>
+
+<ul>
+<li>Since each unit test is independent from each other it makes little sense for a single unit test to fail all the unit tests within the functional test suite</li>
+<li>Test reports wouldn&#8217;t adequately show the number of unit tests which succeeded, failed or were skipped</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>Because of the large number of unit tests (hundreds of them) it just wasn&#8217;t an option to list each unit test individually in either code or within a TestNG <code>testng.xml</code> file (although one could in theory generate this file at build time).</p>
+
+<p>So over the week-end I decided that it was time to take another look at this.</p>
+
+<p>I immediately thought the TestNG <code>@DataProvider</code> annotation was a great fit for our use case, where we &#8220;feed&#8221; a test payload and expected result pair for each test so I implemented the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CarsAndTravelIT</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@DataProvider</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;testSpec&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">[]&gt;</span> <span class="n">createData</span><span class="o">(</span><span class="n">Method</span> <span class="n">method</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// Retrieve the suite name from the annotation and pass it to the iterator which loads the input files within the test suite folder.</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">TestSpecIterator</span><span class="o">(</span><span class="n">method</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">TestSuite</span><span class="o">.</span><span class="na">class</span><span class="o">).</span><span class="na">suiteName</span><span class="o">());</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@TestSuite</span><span class="o">(</span><span class="n">suiteName</span> <span class="o">=</span> <span class="s">&quot;cars&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="nd">@Test</span><span class="o">(</span><span class="n">dataProvider</span> <span class="o">=</span> <span class="s">&quot;testSpec&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">carsTestSuite</span><span class="o">(</span><span class="n">TestSpec</span> <span class="n">testSpec</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">performTestAndAssert</span><span class="o">(</span><span class="n">testSpec</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@TestSuite</span><span class="o">(</span><span class="n">suiteName</span> <span class="o">=</span> <span class="s">&quot;travel&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="nd">@Test</span><span class="o">(</span><span class="n">dataProvider</span> <span class="o">=</span> <span class="s">&quot;testSpec&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">travelTestSuite</span><span class="o">(</span><span class="n">TestSpec</span> <span class="n">testSpec</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">performTestAndAssert</span><span class="o">(</span><span class="n">testSpec</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Retention</span><span class="o">(</span><span class="n">RetentionPolicy</span><span class="o">.</span><span class="na">RUNTIME</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="nd">@interface</span> <span class="n">TestSuite</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">String</span> <span class="nf">suiteName</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kd">class</span> <span class="nc">TestSpecIterator</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">[]&gt;</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">protected</span> <span class="nf">TestSpecIterator</span><span class="o">(</span><span class="n">String</span> <span class="n">suiteName</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="o">...</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="n">Object</span><span class="o">[]</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[]</span> <span class="o">{</span><span class="n">fileIterator</span><span class="o">.</span><span class="na">next</span><span class="o">()};</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code connects each test with a data provider named &#8220;testSpec&#8221;, which is itself using a custom annotation to specify the functional test suite used to look up the test files.</p>
+
+<p>So assuming the following test resources:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>resources
+</span><span class='line'>    cars
+</span><span class='line'>        input1.xml
+</span><span class='line'>        input2.xml
+</span><span class='line'>        input3.xml
+</span><span class='line'>    travel
+</span><span class='line'>        input1.xml
+</span><span class='line'>        input2.xml
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>TestNG will execute something equivalent to:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>carsTestSuite(&quot;input1.xml&quot;)
+</span><span class='line'>carsTestSuite(&quot;input2.xml&quot;)
+</span><span class='line'>carsTestSuite(&quot;input3.xml&quot;)
+</span><span class='line'>travelTestSuite(&quot;input1.xml&quot;)
+</span><span class='line'>travelTestSuite(&quot;input2.xml&quot;)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>At this point I was pretty happy, and I could see that in the TestNG XML report and in the command line each individual test was being counted, so for the above example running <code>mvn integration-test</code> would show 5 tests executed &mdash; exactly what I wanted!</p>
+
+<p>I checked the build results in our continuous build system only to discover that only 2 tests were being reported! What? How could I get 5 tests reported locally yet have 2 tests reported in our build system?</p>
+
+<p>Eventually I tracked it down to the test names that TestNG generates in its JUnit XML report:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
+</span><span class='line'><span class="nt">&lt;testsuite</span> <span class="na">failures=</span><span class="s">&quot;0&quot;</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">errors=</span><span class="s">&quot;0&quot;</span> <span class="na">skipped=</span><span class="s">&quot;0&quot;</span> <span class="na">tests=</span><span class="s">&quot;5&quot;</span> <span class="na">name=</span><span class="s">&quot;TestSuite&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  ...
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;carsTestSuite&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;carsTestSuite&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;carsTestSuite&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;travelTestSuite&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;travelTestSuite&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/testsuite&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So while 5 tests were executed only 2 distinct test names were generated in the JUnit XML report (&#8220;carsTestSuite&#8221; and &#8220;travelTestSuite&#8221;) which causes the build system to report only 2 tests run. Whether that&#8217;s legitimate or not I had to find a solution.</p>
+
+<p>While there may other ways to achieve the same result (by extending the TestNG JUnit reporter for example) my goal was to keep the changes to a minimum and eventually settled on using the <code>getTestName</code> method from the TestNG <code>ITest</code> interface:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CarsAndTravelIT</span> <span class="kd">implements</span> <span class="n">ITest</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">testName</span> <span class="o">=</span>
+</span><span class='line'>        <span class="k">new</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">protected</span> <span class="n">String</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="s">&quot;undefinedTestName&quot;</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@DataProvider</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;testSpec&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">[]&gt;</span> <span class="n">createData</span><span class="o">(</span><span class="n">Method</span> <span class="n">method</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// Retrieve the suite name from the annotation and pass it to the iterator which loads the input files within the test suite folder.</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">TestSpecIterator</span><span class="o">(</span><span class="n">method</span><span class="o">.</span><span class="na">getName</span><span class="o">(),</span> <span class="n">method</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">TestSuite</span><span class="o">.</span><span class="na">class</span><span class="o">).</span><span class="na">suiteName</span><span class="o">());</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@TestSuite</span><span class="o">(</span><span class="n">suiteName</span> <span class="o">=</span> <span class="s">&quot;cars&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="nd">@Test</span><span class="o">(</span><span class="n">dataProvider</span> <span class="o">=</span> <span class="s">&quot;testSpec&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">carsTestSuite</span><span class="o">(</span><span class="n">TestSpec</span> <span class="n">testSpec</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">performTestAndAssert</span><span class="o">(</span><span class="n">testSpec</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@TestSuite</span><span class="o">(</span><span class="n">suiteName</span> <span class="o">=</span> <span class="s">&quot;travel&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="nd">@Test</span><span class="o">(</span><span class="n">dataProvider</span> <span class="o">=</span> <span class="s">&quot;testSpec&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">travelTestSuite</span><span class="o">(</span><span class="n">TestSpec</span> <span class="n">testSpec</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">performTestAndAssert</span><span class="o">(</span><span class="n">testSpec</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getTestName</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">testName</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Retention</span><span class="o">(</span><span class="n">RetentionPolicy</span><span class="o">.</span><span class="na">RUNTIME</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="nd">@interface</span> <span class="n">TestSuite</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">String</span> <span class="nf">suiteName</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kd">class</span> <span class="nc">TestSpecIterator</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">[]&gt;</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">protected</span> <span class="nf">TestSpecIterator</span><span class="o">(</span><span class="n">String</span> <span class="n">suiteMethodName</span><span class="o">,</span> <span class="n">String</span> <span class="n">suiteName</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="o">...</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="n">Object</span><span class="o">[]</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// We&#39;re assuming the caller has called hasNext() before calling this method.</span>
+</span><span class='line'>            <span class="n">TestSpec</span> <span class="n">next</span> <span class="o">=</span> <span class="n">fileIterator</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+</span><span class='line'>            <span class="c1">// Set the test name from the suite method name and the input file name, since this is called</span>
+</span><span class='line'>            <span class="c1">// right before getTestName().</span>
+</span><span class='line'>            <span class="n">testName</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">suiteMethodName</span> <span class="o">+</span> <span class="s">&quot;-&quot;</span> <span class="o">+</span> <span class="n">next</span><span class="o">.</span><span class="na">getInputFile</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[]</span> <span class="o">{</span><span class="n">next</span><span class="o">};</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Because the <code>getTestName</code> method get invoked right after the <code>next</code> method I chose to set the test name right then (since I used an iterator-backed data provider I could do that), which didn&#8217;t require any additional changes to TestNG or its configuration. For safety I used a <code>ThreadLocal</code> but this will not be necessary if you can guarantee single threaded execution.</p>
+
+<p>With those changes the JUnit XML report is now:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
+</span><span class='line'><span class="nt">&lt;testsuite</span> <span class="na">failures=</span><span class="s">&quot;0&quot;</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">errors=</span><span class="s">&quot;0&quot;</span> <span class="na">skipped=</span><span class="s">&quot;0&quot;</span> <span class="na">tests=</span><span class="s">&quot;5&quot;</span> <span class="na">name=</span><span class="s">&quot;TestSuite&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  ...
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;carsTestSuite-input1.xml&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;carsTestSuite-input2.xml&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;carsTestSuite-input3.xml&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;travelTestSuite-input1.xml&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;testcase</span> <span class="na">time=</span><span class="s">&quot;...&quot;</span> <span class="na">classname=</span><span class="s">&quot;...&quot;</span> <span class="na">name=</span><span class="s">&quot;travelTestSuite-input2.xml&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/testsuite&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And now not only the is JUnit XML report had more specific test case names but our continuous build system was also reporting 5 tests. Voila!</p>
+
+<p>I will file an enhancement request with the TestNG project to support this exact use case.</p>
+
+<p>Hopefully this post will be helpful to others.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ParseError - Premature EOF - Java WebServices Client]]></title>

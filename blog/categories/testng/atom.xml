@@ -4,7 +4,7 @@
   <title><![CDATA[Category: testng | Vast Development Blog]]></title>
   <link href="http://vastdevblog.vast.com/blog/categories/testng/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-05-06T21:13:52-05:00</updated>
+  <updated>2012-05-15T07:44:08-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -12,6 +12,212 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Generating Unique JUnit Test Names with TestNG Data Providers]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/"/>
+    <updated>2012-05-14T19:35:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers</id>
+    <content type="html"><![CDATA[<p>We use <a href="http://www.testng.org/">TestNG</a> with the <a href="http://maven.apache.org/plugins/maven-failsafe-plugin/">Maven Failsafe Plugin</a> to implement integration tests for our Java platform services.</p>
+
+<p>For this specific platform service we've defined a set of functional test suites each containing between a few and a few hundred test payloads and expected results, with each test payload and expected result pair constituting one logical unit test. Each TestNG test would run a single functional test suite, iterating over all test pairs &mdash; so while we may have hundreds of unit tests the TestNG reports would only show one test per functional test suite and would fail the entire functional test suite if a single unit test within failed.</p>
+
+<p>This really wasn't ideal for a couple of reasons:</p>
+
+<ul>
+<li>Since each unit test is independent from each other it makes little sense for a single unit test to fail all the unit tests within the functional test suite</li>
+<li>Test reports wouldn't adequately show the number of unit tests which succeeded, failed or were skipped</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>Because of the large number of unit tests (hundreds of them) it just wasn't an option to list each unit test individually in either code or within a TestNG <code>testng.xml</code> file (although one could in theory generate this file at build time).</p>
+
+<p>So over the week-end I decided that it was time to take another look at this.</p>
+
+<p>I immediately thought the TestNG <code>@DataProvider</code> annotation was a great fit for our use case, where we "feed" a test payload and expected result pair for each test so I implemented the following:</p>
+
+<p>``` java
+public class CarsAndTravelIT {</p>
+
+<pre><code>@DataProvider(name = "testSpec")
+public Iterator&lt;Object[]&gt; createData(Method method) {
+    // Retrieve the suite name from the annotation and pass it to the iterator which loads the input files within the test suite folder.
+    return new TestSpecIterator(method.getAnnotation(TestSuite.class).suiteName());
+}
+
+@TestSuite(suiteName = "cars")
+@Test(dataProvider = "testSpec")
+public void carsTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@TestSuite(suiteName = "travel")
+@Test(dataProvider = "testSpec")
+public void travelTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+protected @interface TestSuite {
+    String suiteName();
+}
+
+protected class TestSpecIterator implements Iterator&lt;Object[]&gt; {
+
+    protected TestSpecIterator(String suiteName) {
+        ...
+    }
+
+    ...
+
+    @Override
+    public Object[] next() {
+        return new Object[] {fileIterator.next()};
+    }
+}
+</code></pre>
+
+<p>}  <br/>
+```</p>
+
+<p>This code connects each test with a data provider named "testSpec", which is itself using a custom annotation to specify the functional test suite used to look up the test files.</p>
+
+<p>So assuming the following test resources:</p>
+
+<p>``` html
+resources</p>
+
+<pre><code>cars
+    input1.xml
+    input2.xml
+    input3.xml
+travel
+    input1.xml
+    input2.xml
+</code></pre>
+
+<p>```</p>
+
+<p>TestNG will execute something equivalent to:</p>
+
+<p><code>html
+carsTestSuite("input1.xml")
+carsTestSuite("input2.xml")
+carsTestSuite("input3.xml")
+travelTestSuite("input1.xml")
+travelTestSuite("input2.xml")
+</code></p>
+
+<p>At this point I was pretty happy, and I could see that in the TestNG XML report and in the command line each individual test was being counted, so for the above example running <code>mvn integration-test</code> would show 5 tests executed &mdash; exactly what I wanted!</p>
+
+<p>I checked the build results in our continuous build system only to discover that only 2 tests were being reported! What? How could I get 5 tests reported locally yet have 2 tests reported in our build system?</p>
+
+<p>Eventually I tracked it down to the test names that TestNG generates in its JUnit XML report:</p>
+
+<p><code>xml
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;testsuite failures="0" time="..." errors="0" skipped="0" tests="5" name="TestSuite"&gt;
+  ...
+  &lt;testcase time="..." classname="..." name="carsTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite"/&gt;
+&lt;/testsuite&gt;  
+</code></p>
+
+<p>So while 5 tests were executed only 2 distinct test names were generated in the JUnit XML report ("carsTestSuite" and "travelTestSuite") which causes the build system to report only 2 tests run. Whether that's legitimate or not I had to find a solution.</p>
+
+<p>While there may other ways to achieve the same result (by extending the TestNG JUnit reporter for example) my goal was to keep the changes to a minimum and eventually settled on using the <code>getTestName</code> method from the TestNG <code>ITest</code> interface:</p>
+
+<p>``` java
+public class CarsAndTravelIT implements ITest {</p>
+
+<pre><code>private static final ThreadLocal&lt;String&gt; testName = 
+    new ThreadLocal&lt;String&gt; () {
+        @Override 
+        protected String initialValue() {
+            return "undefinedTestName";
+        }
+    };
+
+@DataProvider(name = "testSpec")
+public Iterator&lt;Object[]&gt; createData(Method method) {
+    // Retrieve the suite name from the annotation and pass it to the iterator which loads the input files within the test suite folder.
+    return new TestSpecIterator(method.getName(), method.getAnnotation(TestSuite.class).suiteName());
+}
+
+@TestSuite(suiteName = "cars")
+@Test(dataProvider = "testSpec")
+public void carsTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@TestSuite(suiteName = "travel")
+@Test(dataProvider = "testSpec")
+public void travelTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@Override
+public String getTestName() {
+    return testName.get();
+} 
+
+@Retention(RetentionPolicy.RUNTIME)
+protected @interface TestSuite {
+    String suiteName();
+}
+
+protected class TestSpecIterator implements Iterator&lt;Object[]&gt; {
+
+    protected TestSpecIterator(String suiteMethodName, String suiteName) {
+        ...
+    }
+
+    ...
+
+    @Override
+    public Object[] next() {
+        // We're assuming the caller has called hasNext() before calling this method.
+        TestSpec next = fileIterator.next();
+        // Set the test name from the suite method name and the input file name, since this is called
+        // right before getTestName().
+        testName.set(suiteMethodName + "-" + next.getInputFile().getName());
+        return new Object[] {next};
+    }
+}
+</code></pre>
+
+<p>}  <br/>
+```</p>
+
+<p>Because the <code>getTestName</code> method get invoked right after the <code>next</code> method I chose to set the test name right then (since I used an iterator-backed data provider I could do that), which didn't require any additional changes to TestNG or its configuration. For safety I used a <code>ThreadLocal</code> but this will not be necessary if you can guarantee single threaded execution.</p>
+
+<p>With those changes the JUnit XML report is now:</p>
+
+<p><code>xml
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;testsuite failures="0" time="..." errors="0" skipped="0" tests="5" name="TestSuite"&gt;
+  ...
+  &lt;testcase time="..." classname="..." name="carsTestSuite-input1.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite-input2.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite-input3.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite-input1.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite-input2.xml"/&gt;
+&lt;/testsuite&gt;  
+</code></p>
+
+<p>And now not only the is JUnit XML report had more specific test case names but our continuous build system was also reporting 5 tests. Voila!</p>
+
+<p>I will file an enhancement request with the TestNG project to support this exact use case.</p>
+
+<p>Hopefully this post will be helpful to others.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Handling Dependency Injection in Scala test cases with TestNG]]></title>
