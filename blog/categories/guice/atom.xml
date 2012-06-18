@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: guice | Vast Development Blog]]></title>
+  <link href="http://vastdevblog.vast.com/blog/categories/guice/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-06-17T20:33:15-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
+  <author>
+    <name><![CDATA[vast.com]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Creating named Guice bindings for typesafe Config properties]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/"/>
+    <updated>2012-06-16T17:49:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties</id>
+    <content type="html"><![CDATA[<p>Guice provides an <a href="http://code.google.com/p/google-guice/wiki/BindingAnnotations">@Named annotation</a> so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric configuration values. For example, to inject a string value into a constructor you could use.</p>
+
+<p>``` java</p>
+
+<pre><code>@Inject
+public MyDB(@Named("jdbc.url") String jdbcUrl) {
+</code></pre>
+
+<p>```</p>
+
+<p>This requires a binding to provide a value linked to the name. You can create this with the <code>bindConstant()</code> method from within a module, for example</p>
+
+<p>``` java</p>
+
+<pre><code>protected void configure() {
+    bindConstant().annotatedWith(Names.named("jdbc.url")).to("http://localhost:431");
+}
+</code></pre>
+
+<p>```</p>
+
+<p>In general though you'd like to read constants like this from a configuration of some sort. The guice <a href="http://google-guice.googlecode.com/git/javadoc/com/google/inject/name/Names.html">Names class</a> provides a convenience method that will create Named bindings for all of the properties in a <a href="http://docs.oracle.com/javase/6/docs/api/java/util/Properties.html">Properties</a> object. We're not using Properties for configuration values though, we're using <a href="https://github.com/typesafehub/config">typesafe Config</a>.</p>
+
+<p>I wanted the same feature for typesafe Config so I wrote a class to create bindings for all the properties in a typesafe Config object so that they could be accessed with @Named annotations.</p>
+
+<!-- more -->
+
+
+<p>The comments at the top of the file explain how it all works. Just one important thing to note, you need to have the Named bindings available before they are used. In guice you don't have explicit control over the order in which values are bound so you'll need to use the ConfigBinder at the top of a configure method and place the module you use it in at the end of the list of modules you use to create your injector.</p>
+
+<p><div><script src='https://gist.github.com/2946244.js?file='></script>
+<noscript><pre><code>/**
+ * Copyright (c) 2012, Vast
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met: 
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer. 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies, 
+ * either expressed or implied, of the FreeBSD Project. 
+ */
+package com.vast.common.config
+
+import java.lang.{Boolean =&gt; JBoolean}
+import scala.collection.JavaConversions._
+import com.typesafe.config._
+import com.google.inject.name.Names
+import com.google.inject.{Key, Binder}
+
+/**
+ * Bind the properties from a config. Each binding key is the
+ * name of the property prefixed by &quot;config.&quot;.
+ *
+ * For example if you have
+ *
+ * a-root {
+ *   a: 10
+ *   b: &quot;Goodbye&quot;
+ *   c: true
+ *   nested: {
+ *     a: &quot;X&quot;
+ *   }
+ *   aList: [
+ *     &quot;h&quot;
+ *     {
+ *       b: &quot;Y&quot;
+ *     }
+ *    ]
+ * }
+ *
+ * b-root {
+ *   x: &quot;Hello World&quot;
+ * }
+ *
+ * and you call bind(config, &quot;a-root&quot;) you'll get properties including
+ * &quot;config.a-root.a&quot;, &quot;config.a-root.nested.a&quot;, and &quot;config.a-root.aList.1.b&quot;.
+ * Not only the individual properties are bound but the intermediate configs,
+ * for example &quot;config.a-root.nested&quot;.
+ *
+ * To ensure the correct order of creation you must create your config and
+ * ConfigBinder inside one of the configure methods in your modules. For example
+ *
+ * def configure() {
+ *    var config = ConfigFactory.parseResources(&quot;com/vast/common/config/configBinder-test.conf&quot;)
+ *    new ConfigBinder(binder()).bind(config, &quot;a-root&quot;)
+ *    bind(classOf[Config]).toInstance(config)
+ *  }
+ *
+ * In addition the module that creates the config must be the last one
+ * listed in the Guice.createInjector call. For example, in the call below
+ * it is ConfigModuleOne that creates the Config instance and calls ConfigBinder.bind
+ *
+ * Guice.createInjector(Stage.PRODUCTION, new ConfigModuleTwo, new ConfigModuleOne)
+ *
+ * @author Alex Moffat (alex.moffat@vast.com)
+ */
+
+class ConfigBinder(binder: Binder) {
+
+  def bind(config: Config, root: String) {
+    bind(config.getObject(root), root, &quot;config.&quot; + root)
+  }
+
+  private def bind(obj: ConfigValue, configPath: String, bindingPath: String) {
+    obj.valueType() match {
+      case ConfigValueType.OBJECT =&gt; {
+        val configObj =  obj.asInstanceOf[ConfigObject]
+        // Bind the config from the object.
+        binder
+          .bind(Key.get(classOf[Config], Names.named(bindingPath)))
+          .toInstance(configObj.toConfig)
+        // Bind any nested values.
+        configObj.entrySet().foreach(me =&gt; {
+          val key = me.getKey
+          bind(me.getValue,
+            configPath + &quot;.&quot; + key,
+            bindingPath + &quot;.&quot; + key)
+        })
+      }
+      case ConfigValueType.LIST =&gt; {
+        val values = obj.asInstanceOf[ConfigList]
+        for (i &lt;- 0 until values.size()) {
+          bind(values(i),
+            configPath + &quot;.&quot; + i.toString,
+            bindingPath + &quot;.&quot; + i.toString)
+        }
+      }
+      case ConfigValueType.NUMBER =&gt; {
+        // Bind as string and rely on guice's conversion code when the value is used.
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[Number].toString)
+      }
+      case ConfigValueType.BOOLEAN =&gt; {
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[JBoolean])
+      }
+      case ConfigValueType.NULL =&gt; {
+        // NULL values are ignored.
+      }
+      case ConfigValueType.STRING =&gt; {
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[String])
+      }
+    }
+  }
+}
+</code></pre></noscript></div>
+</p>
+]]></content>
+  </entry>
+  
+</feed>

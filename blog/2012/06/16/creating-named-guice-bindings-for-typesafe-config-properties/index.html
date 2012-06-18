@@ -1,0 +1,424 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Creating named Guice bindings for typesafe Config properties - Vast Development Blog</title>
+  <meta name="author" content="vast.com">
+
+  <meta name="title" content="Creating named Guice bindings for typesafe Config properties"/>
+  
+  <meta name="description" content="Guice provides an @Named annotation so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Vast Development Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30412900-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Vast Development Blog</a></h1>
+  
+    <h2>The vast.com development blog.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:vastdevblog.vast.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Creating Named Guice Bindings for Typesafe Config Properties</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-06-16T17:49:00-05:00" pubdate data-updated="true">Jun 16<span>th</span>, 2012</time> 
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Guice provides an <a href="http://code.google.com/p/google-guice/wiki/BindingAnnotations">@Named annotation</a> so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric configuration values. For example, to inject a string value into a constructor you could use.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Inject</span>
+</span><span class='line'><span class="kd">public</span> <span class="nf">MyDB</span><span class="o">(</span><span class="nd">@Named</span><span class="o">(</span><span class="s">&quot;jdbc.url&quot;</span><span class="o">)</span> <span class="n">String</span> <span class="n">jdbcUrl</span><span class="o">)</span> <span class="o">{</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This requires a binding to provide a value linked to the name. You can create this with the <code>bindConstant()</code> method from within a module, for example</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">configure</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">bindConstant</span><span class="o">().</span><span class="na">annotatedWith</span><span class="o">(</span><span class="n">Names</span><span class="o">.</span><span class="na">named</span><span class="o">(</span><span class="s">&quot;jdbc.url&quot;</span><span class="o">)).</span><span class="na">to</span><span class="o">(</span><span class="s">&quot;http://localhost:431&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In general though you&#8217;d like to read constants like this from a configuration of some sort. The guice <a href="http://google-guice.googlecode.com/git/javadoc/com/google/inject/name/Names.html">Names class</a> provides a convenience method that will create Named bindings for all of the properties in a <a href="http://docs.oracle.com/javase/6/docs/api/java/util/Properties.html">Properties</a> object. We&#8217;re not using Properties for configuration values though, we&#8217;re using <a href="https://github.com/typesafehub/config">typesafe Config</a>.</p>
+
+<p>I wanted the same feature for typesafe Config so I wrote a class to create bindings for all the properties in a typesafe Config object so that they could be accessed with @Named annotations.</p>
+
+<!-- more -->
+
+
+<p>The comments at the top of the file explain how it all works. Just one important thing to note, you need to have the Named bindings available before they are used. In guice you don&#8217;t have explicit control over the order in which values are bound so you&#8217;ll need to use the ConfigBinder at the top of a configure method and place the module you use it in at the end of the list of modules you use to create your injector.</p>
+
+<div><script src='https://gist.github.com/2946244.js?file='></script>
+<noscript><pre><code>/**
+ * Copyright (c) 2012, Vast
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met: 
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer. 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies, 
+ * either expressed or implied, of the FreeBSD Project. 
+ */
+package com.vast.common.config
+
+import java.lang.{Boolean =&gt; JBoolean}
+import scala.collection.JavaConversions._
+import com.typesafe.config._
+import com.google.inject.name.Names
+import com.google.inject.{Key, Binder}
+
+/**
+ * Bind the properties from a config. Each binding key is the
+ * name of the property prefixed by &quot;config.&quot;.
+ *
+ * For example if you have
+ *
+ * a-root {
+ *   a: 10
+ *   b: &quot;Goodbye&quot;
+ *   c: true
+ *   nested: {
+ *     a: &quot;X&quot;
+ *   }
+ *   aList: [
+ *     &quot;h&quot;
+ *     {
+ *       b: &quot;Y&quot;
+ *     }
+ *    ]
+ * }
+ *
+ * b-root {
+ *   x: &quot;Hello World&quot;
+ * }
+ *
+ * and you call bind(config, &quot;a-root&quot;) you'll get properties including
+ * &quot;config.a-root.a&quot;, &quot;config.a-root.nested.a&quot;, and &quot;config.a-root.aList.1.b&quot;.
+ * Not only the individual properties are bound but the intermediate configs,
+ * for example &quot;config.a-root.nested&quot;.
+ *
+ * To ensure the correct order of creation you must create your config and
+ * ConfigBinder inside one of the configure methods in your modules. For example
+ *
+ * def configure() {
+ *    var config = ConfigFactory.parseResources(&quot;com/vast/common/config/configBinder-test.conf&quot;)
+ *    new ConfigBinder(binder()).bind(config, &quot;a-root&quot;)
+ *    bind(classOf[Config]).toInstance(config)
+ *  }
+ *
+ * In addition the module that creates the config must be the last one
+ * listed in the Guice.createInjector call. For example, in the call below
+ * it is ConfigModuleOne that creates the Config instance and calls ConfigBinder.bind
+ *
+ * Guice.createInjector(Stage.PRODUCTION, new ConfigModuleTwo, new ConfigModuleOne)
+ *
+ * @author Alex Moffat (alex.moffat@vast.com)
+ */
+
+class ConfigBinder(binder: Binder) {
+
+  def bind(config: Config, root: String) {
+    bind(config.getObject(root), root, &quot;config.&quot; + root)
+  }
+
+  private def bind(obj: ConfigValue, configPath: String, bindingPath: String) {
+    obj.valueType() match {
+      case ConfigValueType.OBJECT =&gt; {
+        val configObj =  obj.asInstanceOf[ConfigObject]
+        // Bind the config from the object.
+        binder
+          .bind(Key.get(classOf[Config], Names.named(bindingPath)))
+          .toInstance(configObj.toConfig)
+        // Bind any nested values.
+        configObj.entrySet().foreach(me =&gt; {
+          val key = me.getKey
+          bind(me.getValue,
+            configPath + &quot;.&quot; + key,
+            bindingPath + &quot;.&quot; + key)
+        })
+      }
+      case ConfigValueType.LIST =&gt; {
+        val values = obj.asInstanceOf[ConfigList]
+        for (i &lt;- 0 until values.size()) {
+          bind(values(i),
+            configPath + &quot;.&quot; + i.toString,
+            bindingPath + &quot;.&quot; + i.toString)
+        }
+      }
+      case ConfigValueType.NUMBER =&gt; {
+        // Bind as string and rely on guice's conversion code when the value is used.
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[Number].toString)
+      }
+      case ConfigValueType.BOOLEAN =&gt; {
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[JBoolean])
+      }
+      case ConfigValueType.NULL =&gt; {
+        // NULL values are ignored.
+      }
+      case ConfigValueType.STRING =&gt; {
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[String])
+      }
+    }
+  }
+}
+</code></pre></noscript></div>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-06-16T17:49:00-05:00" pubdate data-updated="true">Jun 16<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/guice/'>guice</a>, <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/typesafe/'>typesafe</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/" data-via="" data-counturl="http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/" >Tweet</a>
+  
+  
+  <g:plusone size="medium" annotation="bubble" width="200" href="http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/"></g:plusone>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/" title="Previous Post: Generating Unique JUnit Test Names with TestNG Data Providers">&laquo; Generating Unique JUnit Test Names with TestNG Data Providers</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Creating named Guice bindings for typesafe Config properties</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/">Generating Unique JUnit Test Names with TestNG Data Providers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/">ParseError - Premature EOF - Java WebServices Client</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/04/18/using-syslogappender-on-os-x/">Using SyslogAppender on OS X</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/04/16/ranking-apache-pig-tuples/">Ranking Apache Pig Tuples with a Python UDF</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - vast.com -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
