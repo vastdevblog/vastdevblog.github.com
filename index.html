@@ -10,7 +10,7 @@
 
   <meta name="title" content=""/>
   
-  <meta name="description" content="We use TestNG with the Maven Failsafe Plugin to implement integration tests for our Java platform services. For this specific platform service we&# &hellip;">
+  <meta name="description" content="Guice provides an @Named annotation so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,73 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Creating Named Guice Bindings for Typesafe Config Properties</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-06-16T17:49:00-05:00" pubdate data-updated="true">Jun 16<span>th</span>, 2012</time>  &bull; 
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
+ 
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Guice provides an <a href="http://code.google.com/p/google-guice/wiki/BindingAnnotations">@Named annotation</a> so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric configuration values. For example, to inject a string value into a constructor you could use.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Inject</span>
+</span><span class='line'><span class="kd">public</span> <span class="nf">MyDB</span><span class="o">(</span><span class="nd">@Named</span><span class="o">(</span><span class="s">&quot;jdbc.url&quot;</span><span class="o">)</span> <span class="n">String</span> <span class="n">jdbcUrl</span><span class="o">)</span> <span class="o">{</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This requires a binding to provide a value linked to the name. You can create this with the <code>bindConstant()</code> method from within a module, for example</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">configure</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">bindConstant</span><span class="o">().</span><span class="na">annotatedWith</span><span class="o">(</span><span class="n">Names</span><span class="o">.</span><span class="na">named</span><span class="o">(</span><span class="s">&quot;jdbc.url&quot;</span><span class="o">)).</span><span class="na">to</span><span class="o">(</span><span class="s">&quot;http://localhost:431&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In general though you&#8217;d like to read constants like this from a configuration of some sort. The guice <a href="http://google-guice.googlecode.com/git/javadoc/com/google/inject/name/Names.html">Names class</a> provides a convenience method that will create Named bindings for all of the properties in a <a href="http://docs.oracle.com/javase/6/docs/api/java/util/Properties.html">Properties</a> object. We&#8217;re not using Properties for configuration values though, we&#8217;re using <a href="https://github.com/typesafehub/config">typesafe Config</a>.</p>
+
+<p>I wanted the same feature for typesafe Config so I wrote a class to create bindings for all the properties in a typesafe Config object so that they could be accessed with @Named annotations.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -558,56 +625,9 @@ The two interesting points are</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/02/12/rotating-to-show-different-ios-views/">Rotating to Show Different iOS Views</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-02-12T20:11:00-06:00" pubdate data-updated="true">Feb 12<span>th</span>, 2012</time>  &bull; 
-  
-
-<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
- 
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In the tradition of explaining fairly simple things at great length this approach is based on the documentation from Apple describing <a href="https://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/RespondingtoDeviceOrientationChanges/RespondingtoDeviceOrientationChanges.html#//apple_ref/doc/uid/TP40007457-CH7-SW1">Creating an Alternate Landscape Interface</a> and various answers on <a href="http://stackoverflow.com/">stackoverflow</a>. It differs from the information I could find on the internet because the flow includes a navigation controller and uses a storyboard. The flow between the screens in the interface is shown in the diagram below.</p>
-
-<p><img src="/images/2012-02-12-ios-views.png" alt="Flow" /></p>
-
-<p>There is a first screen, A, that has two alternate views, one portrait and one landscape. These can&#8217;t be created using the springs and struts layout tools. Rotating the  phone while screen A is showing should switch between the two views. Tapping some element on screen A, in either view, transitions to screen B. Screen B handles rotation itself by redrawing its interface in drawRect:. Going back from B should show the correct version of A. There&#8217;s a navigation controller wrapping the whole interface that provides the navigation bar and button in view B to go back to view A.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/02/12/rotating-to-show-different-ios-views/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -618,6 +638,10 @@ The two interesting points are</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Creating named Guice bindings for typesafe Config properties</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/">Generating Unique JUnit Test Names with TestNG Data Providers</a>
@@ -633,10 +657,6 @@ The two interesting points are</p>
     
       <li class="post">
         <a href="/blog/2012/04/16/ranking-apache-pig-tuples/">Ranking Apache Pig Tuples with a Python UDF</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/04/08/uiviewcontroller-life-cycle/">UIViewController Life Cycle</a>
       </li>
     
   </ul>
