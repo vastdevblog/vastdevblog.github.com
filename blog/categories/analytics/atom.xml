@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: python | Vast Blog]]></title>
-  <link href="http://vastdevblog.vast.com/blog/categories/python/atom.xml" rel="self"/>
+  <title><![CDATA[Category: analytics | Vast Blog]]></title>
+  <link href="http://vastdevblog.vast.com/blog/categories/analytics/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
   <updated>2012-07-01T14:15:36-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>

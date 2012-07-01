@@ -1,0 +1,729 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: development | Vast Blog]]></title>
+  <link href="http://vastdevblog.vast.com/blog/categories/development/atom.xml" rel="self"/>
+  <link href="http://vastdevblog.vast.com/"/>
+  <updated>2012-07-01T14:15:36-05:00</updated>
+  <id>http://vastdevblog.vast.com/</id>
+  <author>
+    <name><![CDATA[vast.com]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Creating named Guice bindings for typesafe Config properties]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/"/>
+    <updated>2012-06-16T17:49:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties</id>
+    <content type="html"><![CDATA[<p>Guice provides an <a href="http://code.google.com/p/google-guice/wiki/BindingAnnotations">@Named annotation</a> so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric configuration values. For example, to inject a string value into a constructor you could use.</p>
+
+<p>``` java</p>
+
+<pre><code>@Inject
+public MyDB(@Named("jdbc.url") String jdbcUrl) {
+</code></pre>
+
+<p>```</p>
+
+<p>This requires a binding to provide a value linked to the name. You can create this with the <code>bindConstant()</code> method from within a module, for example</p>
+
+<p>``` java</p>
+
+<pre><code>protected void configure() {
+    bindConstant().annotatedWith(Names.named("jdbc.url")).to("http://localhost:431");
+}
+</code></pre>
+
+<p>```</p>
+
+<p>In general though you'd like to read constants like this from a configuration of some sort. The guice <a href="http://google-guice.googlecode.com/git/javadoc/com/google/inject/name/Names.html">Names class</a> provides a convenience method that will create Named bindings for all of the properties in a <a href="http://docs.oracle.com/javase/6/docs/api/java/util/Properties.html">Properties</a> object. We're not using Properties for configuration values though, we're using <a href="https://github.com/typesafehub/config">typesafe Config</a>.</p>
+
+<p>I wanted the same feature for typesafe Config so I wrote a class to create bindings for all the properties in a typesafe Config object so that they could be accessed with @Named annotations.</p>
+
+<!-- more -->
+
+
+<p>The comments at the top of the file explain how it all works. Just one important thing to note, you need to have the Named bindings available before they are used. In guice you don't have explicit control over the order in which values are bound so you'll need to use the ConfigBinder at the top of a configure method and place the module you use it in at the end of the list of modules you use to create your injector.</p>
+
+<p><div><script src='https://gist.github.com/2946244.js?file='></script>
+<noscript><pre><code>/**
+ * Copyright (c) 2012, Vast
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met: 
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer. 
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies, 
+ * either expressed or implied, of the FreeBSD Project. 
+ */
+package com.vast.common.config
+
+import java.lang.{Boolean =&gt; JBoolean}
+import scala.collection.JavaConversions._
+import com.typesafe.config._
+import com.google.inject.name.Names
+import com.google.inject.{Key, Binder}
+
+/**
+ * Bind the properties from a config. Each binding key is the
+ * name of the property prefixed by &quot;config.&quot;.
+ *
+ * For example if you have
+ *
+ * a-root {
+ *   a: 10
+ *   b: &quot;Goodbye&quot;
+ *   c: true
+ *   nested: {
+ *     a: &quot;X&quot;
+ *   }
+ *   aList: [
+ *     &quot;h&quot;
+ *     {
+ *       b: &quot;Y&quot;
+ *     }
+ *    ]
+ * }
+ *
+ * b-root {
+ *   x: &quot;Hello World&quot;
+ * }
+ *
+ * and you call bind(config, &quot;a-root&quot;) you'll get properties including
+ * &quot;config.a-root.a&quot;, &quot;config.a-root.nested.a&quot;, and &quot;config.a-root.aList.1.b&quot;.
+ * Not only the individual properties are bound but the intermediate configs,
+ * for example &quot;config.a-root.nested&quot;.
+ *
+ * To ensure the correct order of creation you must create your config and
+ * ConfigBinder inside one of the configure methods in your modules. For example
+ *
+ * def configure() {
+ *    var config = ConfigFactory.parseResources(&quot;com/vast/common/config/configBinder-test.conf&quot;)
+ *    new ConfigBinder(binder()).bind(config, &quot;a-root&quot;)
+ *    bind(classOf[Config]).toInstance(config)
+ *  }
+ *
+ * In addition the module that creates the config must be the last one
+ * listed in the Guice.createInjector call. For example, in the call below
+ * it is ConfigModuleOne that creates the Config instance and calls ConfigBinder.bind
+ *
+ * Guice.createInjector(Stage.PRODUCTION, new ConfigModuleTwo, new ConfigModuleOne)
+ *
+ * @author Alex Moffat (alex.moffat@vast.com)
+ */
+
+class ConfigBinder(binder: Binder) {
+
+  def bind(config: Config, root: String) {
+    bind(config.getObject(root), root, &quot;config.&quot; + root)
+  }
+
+  private def bind(obj: ConfigValue, configPath: String, bindingPath: String) {
+    obj.valueType() match {
+      case ConfigValueType.OBJECT =&gt; {
+        val configObj =  obj.asInstanceOf[ConfigObject]
+        // Bind the config from the object.
+        binder
+          .bind(Key.get(classOf[Config], Names.named(bindingPath)))
+          .toInstance(configObj.toConfig)
+        // Bind any nested values.
+        configObj.entrySet().foreach(me =&gt; {
+          val key = me.getKey
+          bind(me.getValue,
+            configPath + &quot;.&quot; + key,
+            bindingPath + &quot;.&quot; + key)
+        })
+      }
+      case ConfigValueType.LIST =&gt; {
+        val values = obj.asInstanceOf[ConfigList]
+        for (i &lt;- 0 until values.size()) {
+          bind(values(i),
+            configPath + &quot;.&quot; + i.toString,
+            bindingPath + &quot;.&quot; + i.toString)
+        }
+      }
+      case ConfigValueType.NUMBER =&gt; {
+        // Bind as string and rely on guice's conversion code when the value is used.
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[Number].toString)
+      }
+      case ConfigValueType.BOOLEAN =&gt; {
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[JBoolean])
+      }
+      case ConfigValueType.NULL =&gt; {
+        // NULL values are ignored.
+      }
+      case ConfigValueType.STRING =&gt; {
+        binder
+          .bindConstant()
+          .annotatedWith(Names.named(bindingPath))
+          .to(obj.unwrapped()
+          .asInstanceOf[String])
+      }
+    }
+  }
+}
+</code></pre></noscript></div>
+</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Generating Unique JUnit Test Names with TestNG Data Providers]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/"/>
+    <updated>2012-05-14T19:35:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers</id>
+    <content type="html"><![CDATA[<p>We use <a href="http://www.testng.org/">TestNG</a> with the <a href="http://maven.apache.org/plugins/maven-failsafe-plugin/">Maven Failsafe Plugin</a> to implement integration tests for our Java platform services.</p>
+
+<p>For this specific platform service we've defined a set of functional test suites each containing between a few and a few hundred test payloads and expected results, with each test payload and expected result pair constituting one logical unit test. Each TestNG test would run a single functional test suite, iterating over all test pairs &mdash; so while we may have hundreds of unit tests the TestNG reports would only show one test per functional test suite and would fail the entire functional test suite if a single unit test within failed.</p>
+
+<p>This really wasn't ideal for a couple of reasons:</p>
+
+<ul>
+<li>Since each unit test is independent from each other it makes little sense for a single unit test to fail all the unit tests within the functional test suite</li>
+<li>Test reports wouldn't adequately show the number of unit tests which succeeded, failed or were skipped</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>Because of the large number of unit tests (hundreds of them) it just wasn't an option to list each unit test individually in either code or within a TestNG <code>testng.xml</code> file (although one could in theory generate this file at build time).</p>
+
+<p>So over the week-end I decided that it was time to take another look at this.</p>
+
+<p>I immediately thought the TestNG <code>@DataProvider</code> annotation was a great fit for our use case, where we "feed" a test payload and expected result pair for each test so I implemented the following:</p>
+
+<p>``` java
+public class CarsAndTravelIT {</p>
+
+<pre><code>@DataProvider(name = "testSpec")
+public Iterator&lt;Object[]&gt; createData(Method method) {
+    // Retrieve the suite name from the annotation and pass it to the iterator which loads the input files within the test suite folder.
+    return new TestSpecIterator(method.getAnnotation(TestSuite.class).suiteName());
+}
+
+@TestSuite(suiteName = "cars")
+@Test(dataProvider = "testSpec")
+public void carsTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@TestSuite(suiteName = "travel")
+@Test(dataProvider = "testSpec")
+public void travelTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+protected @interface TestSuite {
+    String suiteName();
+}
+
+protected class TestSpecIterator implements Iterator&lt;Object[]&gt; {
+
+    protected TestSpecIterator(String suiteName) {
+        ...
+    }
+
+    ...
+
+    @Override
+    public Object[] next() {
+        return new Object[] {fileIterator.next()};
+    }
+}
+</code></pre>
+
+<p>}  <br/>
+```</p>
+
+<p>This code connects each test with a data provider named "testSpec", which is itself using a custom annotation to specify the functional test suite used to look up the test files.</p>
+
+<p>So assuming the following test resources:</p>
+
+<p>``` html
+resources</p>
+
+<pre><code>cars
+    input1.xml
+    input2.xml
+    input3.xml
+travel
+    input1.xml
+    input2.xml
+</code></pre>
+
+<p>```</p>
+
+<p>TestNG will execute something equivalent to:</p>
+
+<p><code>html
+carsTestSuite("input1.xml")
+carsTestSuite("input2.xml")
+carsTestSuite("input3.xml")
+travelTestSuite("input1.xml")
+travelTestSuite("input2.xml")
+</code></p>
+
+<p>At this point I was pretty happy, and I could see that in the TestNG XML report and in the command line each individual test was being counted, so for the above example running <code>mvn integration-test</code> would show 5 tests executed &mdash; exactly what I wanted!</p>
+
+<p>I checked the build results in our continuous build system only to discover that only 2 tests were being reported! What? How could I get 5 tests reported locally yet have 2 tests reported in our build system?</p>
+
+<p>Eventually I tracked it down to the test names that TestNG generates in its JUnit XML report:</p>
+
+<p><code>xml
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;testsuite failures="0" time="..." errors="0" skipped="0" tests="5" name="TestSuite"&gt;
+  ...
+  &lt;testcase time="..." classname="..." name="carsTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite"/&gt;
+&lt;/testsuite&gt;  
+</code></p>
+
+<p>So while 5 tests were executed only 2 distinct test names were generated in the JUnit XML report ("carsTestSuite" and "travelTestSuite") which causes the build system to report only 2 tests run. Whether that's legitimate or not I had to find a solution.</p>
+
+<p>While there may other ways to achieve the same result (by extending the TestNG JUnit reporter for example) my goal was to keep the changes to a minimum and eventually settled on using the <code>getTestName</code> method from the TestNG <code>ITest</code> interface:</p>
+
+<p>``` java
+public class CarsAndTravelIT implements ITest {</p>
+
+<pre><code>private static final ThreadLocal&lt;String&gt; testName = 
+    new ThreadLocal&lt;String&gt; () {
+        @Override 
+        protected String initialValue() {
+            return "undefinedTestName";
+        }
+    };
+
+@DataProvider(name = "testSpec")
+public Iterator&lt;Object[]&gt; createData(Method method) {
+    // Retrieve the suite name from the annotation and pass it to the iterator which loads the input files within the test suite folder.
+    return new TestSpecIterator(method.getName(), method.getAnnotation(TestSuite.class).suiteName());
+}
+
+@TestSuite(suiteName = "cars")
+@Test(dataProvider = "testSpec")
+public void carsTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@TestSuite(suiteName = "travel")
+@Test(dataProvider = "testSpec")
+public void travelTestSuite(TestSpec testSpec) throws Exception {
+    performTestAndAssert(testSpec);
+}
+
+@Override
+public String getTestName() {
+    return testName.get();
+} 
+
+@Retention(RetentionPolicy.RUNTIME)
+protected @interface TestSuite {
+    String suiteName();
+}
+
+protected class TestSpecIterator implements Iterator&lt;Object[]&gt; {
+
+    protected TestSpecIterator(String suiteMethodName, String suiteName) {
+        ...
+    }
+
+    ...
+
+    @Override
+    public Object[] next() {
+        // We're assuming the caller has called hasNext() before calling this method.
+        TestSpec next = fileIterator.next();
+        // Set the test name from the suite method name and the input file name, since this is called
+        // right before getTestName().
+        testName.set(suiteMethodName + "-" + next.getInputFile().getName());
+        return new Object[] {next};
+    }
+}
+</code></pre>
+
+<p>}  <br/>
+```</p>
+
+<p>Because the <code>getTestName</code> method get invoked right after the <code>next</code> method I chose to set the test name right then (since I used an iterator-backed data provider I could do that), which didn't require any additional changes to TestNG or its configuration. For safety I used a <code>ThreadLocal</code> but this will not be necessary if you can guarantee single threaded execution.</p>
+
+<p>With those changes the JUnit XML report is now:</p>
+
+<p><code>xml
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;testsuite failures="0" time="..." errors="0" skipped="0" tests="5" name="TestSuite"&gt;
+  ...
+  &lt;testcase time="..." classname="..." name="carsTestSuite-input1.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite-input2.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="carsTestSuite-input3.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite-input1.xml"/&gt;
+  &lt;testcase time="..." classname="..." name="travelTestSuite-input2.xml"/&gt;
+&lt;/testsuite&gt;  
+</code></p>
+
+<p>And now not only the is JUnit XML report had more specific test case names but our continuous build system was also reporting 5 tests. Voila!</p>
+
+<p>I will file an enhancement request with the TestNG project to support this exact use case.</p>
+
+<p>Hopefully this post will be helpful to others.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ParseError - Premature EOF - Java WebServices Client]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/"/>
+    <updated>2012-05-06T20:12:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/05/06/parseerror-premature-eof-java-webservices-client</id>
+    <content type="html"><![CDATA[<p>Quick post to document the solution, without the underlying root cause, to an exception.
+The setup is a client implemented with the JAX-WS reference implementation in Java 6 (JAX-WS RI 2.1.6 in JDK 6) calling a server also using JAX-WS hosted by Jetty using the <a href="http://jectbd.com/?p=1624">jetty-jaxws2spi package</a>.
+Setup as normal I get an exception in the client when it tries to parse the response from the server.</p>
+
+<p><code>
+com.sun.xml.internal.ws.streaming.XMLStreamReaderException: XML reader error: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[1,507]
+Message: Premature EOF
+</code></p>
+
+<!-- more -->
+
+
+<p>I used the <a href="http://grinder.sourceforge.net/g3/tcpproxy.html">TCPProxy from The Grinder</a> to look at the request and response from the communication.
+In the output below I've obscured some of the namespaces and element names but kept the content length the same.
+You can see that the response is being sent back chunked, in two chunks.</p>
+
+<p>```
+--- localhost:49970->127.0.0.1:8070 opened --
+--- 127.0.0.1:8070->localhost:49970 opened --
+------ localhost:49970->127.0.0.1:8070 ------
+POST /serviceAddress HTTP/1.1
+Content-type: text/xml;charset="utf-8"
+Soapaction: "sendAuthorizationEmail"
+Accept: text/xml, multipart/related, text/html, image/gif, image/jpeg, <em>; q=.2, </em>/*; q=.2
+User-Agent: JAX-WS RI 2.1.6 in JDK 6
+Host: localhost:8071
+Connection: keep-alive
+Content-Length: 523</p>
+
+<p>------ localhost:49970->127.0.0.1:8070 ------
+&lt;?xml version="1.0" ?>&lt;S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">&lt;S:Body>&lt;ns2:sendAuthorizationEmailRequest xmlns:ns2="http://<strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><em>/types" xmlns:ns3="http://</em></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>/faults"><sendAuthorizationEmailRequest><partyId>mem001</partyId><logicalID>NOT REQUIRED</logicalID><dynamicContent>Some content for an email</dynamicContent></sendAuthorizationEmailRequest>&lt;/ns2:sendAuthorizationEmailRequest>&lt;/S:Body>&lt;/S:Envelope>
+------ 127.0.0.1:8070->localhost:49970 ------
+HTTP/1.1 200 OK
+Content-Type: text/xml;charset=UTF-8
+Transfer-Encoding: chunked
+Server: Jetty(8.1.3.v20120416)</p>
+
+<p>5E
+&lt;?xml version="1.0" ?>&lt;S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">&lt;S:Body></p>
+
+<p>------ 127.0.0.1:8070->localhost:49970 ------
+19C
+&lt;ns2:sendAuthorizationEmailResponse xmlns:ns2="http://<strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><em>/types" xmlns:ns3="http://</em></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>/faults"><sendAuthorizationEmailResponse><XXXXMessageType><messageCode>OK</messageCode><messageReason>OK</messageReason></XXXXMessageType></sendAuthorizationEmailResponse>&lt;/ns2:sendAuthorizationEmailResponse>&lt;/S:Body>&lt;/S:Envelope></p>
+
+<p>--- 127.0.0.1:8070->localhost:49970 closed --
+--- localhost:49970->127.0.0.1:8070 closed --
+```</p>
+
+<p>Eventually, after much poking around, made more difficult by lack of source code, I decided it might be that the client code could not handle the chunked response from the server.
+To tell the server that the client didn't want / couldn't handle chunked I needed to add the "Connection: close" header to the request.
+As with all things in the Java WebServices world this was not easy, involving poorly documented options that all seem to be controlled by passing around untyped Maps.
+Here the magic incantation was</p>
+
+<p>```
+RequestContext ctx = ((BindingProvider) service).getRequestContext();
+ctx.put(MessageContext.HTTP_REQUEST_HEADERS,</p>
+
+<pre><code>Collections.singletonMap("Connection", Collections.singletonList("close")));
+</code></pre>
+
+<p>```</p>
+
+<p>Setting this changed the response from the server, as shown below, and the client was able to successfully parse the result.</p>
+
+<p>```
+--- localhost:51386->127.0.0.1:8070 opened --
+--- 127.0.0.1:8070->localhost:51386 opened --
+------ localhost:51386->127.0.0.1:8070 ------
+POST /serviceAddress HTTP/1.1
+Content-type: text/xml;charset="utf-8"
+Connection: close
+Soapaction: "sendAuthorizationEmail"
+Accept: text/xml, multipart/related, text/html, image/gif, image/jpeg, <em>; q=.2, </em>/*; q=.2
+User-Agent: JAX-WS RI 2.1.6 in JDK 6
+Host: localhost:8071
+Content-Length: 523</p>
+
+<p>&lt;?xml version="1.0" ?>&lt;S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">&lt;S:Body>&lt;ns2:sendAuthorizationEmailRequest xmlns:ns2="http://<strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><em>/types" xmlns:ns3="http://</em></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>/faults"><sendAuthorizationEmailRequest><partyId>mem001</partyId><logicalID>NOT REQUIRED</logicalID><dynamicContent>Some content for an email</dynamicContent></sendAuthorizationEmailRequest>&lt;/ns2:sendAuthorizationEmailRequest>&lt;/S:Body>&lt;/S:Envelope>
+------ 127.0.0.1:8070->localhost:51386 ------
+HTTP/1.1 200 OK
+Content-Type: text/xml;charset=UTF-8
+Connection: close
+Server: Jetty(8.1.3.v20120416)</p>
+
+<p>&lt;?xml version="1.0" ?>&lt;S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">&lt;S:Body>
+------ 127.0.0.1:8070->localhost:51386 ------
+&lt;ns2:sendAuthorizationEmailResponse xmlns:ns2="http://<strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><em>/types" xmlns:ns3="http://</em></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>/faults"><sendAuthorizationEmailResponse><XXXXMessageType><messageCode>OK</messageCode><messageReason>OK</messageReason></XXXXMessageType></sendAuthorizationEmailResponse>&lt;/ns2:sendAuthorizationEmailResponse>&lt;/S:Body>&lt;/S:Envelope>
+--- 127.0.0.1:8070->localhost:51386 closed --
+--- localhost:51386->127.0.0.1:8070 closed --</p>
+
+<p>```</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Using SyslogAppender on OS X]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x/"/>
+    <updated>2012-04-18T09:48:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/04/18/using-syslogappender-on-os-x</id>
+    <content type="html"><![CDATA[<p>I'm using <a href="http://logback.qos.ch/apidocs/ch/qos/logback/classic/net/SyslogAppender.html">ch.qos.logback.classic.net.SyslogAppender</a>
+to send messages to syslog and I need to be able to test the configuration on OS X. There are various sources of
+information on how to do this but no comprehensive explanation of what to do for OS X 10.7 so here's my four step
+process.</p>
+
+<!-- more -->
+
+
+<h3>Choose the syslog facility to log to</h3>
+
+<p>The facility an information field associated with a syslog message.
+It is used, together with the priority, in the syslog configuration to separate the processing of different messages.
+For instance, to send all informational messages from the mail system to a one log file and all critical messages from cron to another.
+Choosing the facility to use is important. You want to pick one that isn't used by any, or many, other systems so that you can separate your log messages from others.
+I picked LOCAL6 based on <a href="http://serverfault.com/questions/115923/which-program-defaults-uses-syslog-local0-7-facilities">this answer on serverfault</a>. It's easy to change though once you get the system working.</p>
+
+<h3>Configure syslog to log your messages to a file</h3>
+
+<p>The SyslogAppender will send logged messages to the syslog daemon (syslogd) and that will use the configuration in <a href="http://linux.die.net/man/5/syslog.conf">/etc/syslog.conf</a> to decide what to do with them next.
+You'll need to use sudo to edit the config file because only root has write access to it.
+I used sudo emacs /etc/syslog.conf.
+For my testing purposes I just want to log to a file so I added a line to direct messages from the local6 at all priority levels to a vast.log file.</p>
+
+<p><code>
+local6.*                        /var/log/vast.log
+</code></p>
+
+<p>At this point you should test your syslog configuration using the <a href="http://www.unix.com/man-page/OSX/1/LOGGER/">logger</a> command line program.
+First you have to get syslogd to reload its configuration using the two commands below.</p>
+
+<p><code>
+sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist
+sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</code></p>
+
+<p>Now you can use logger command to send a message. Here I'm sending an info priority message to the local6 faciltiy.</p>
+
+<p><code>
+logger -p local6.info "test message"
+</code></p>
+
+<p>In the log file you should see something like</p>
+
+<p><code>
+Apr 18 10:32:45 Alexs-MacBook-Pro alexmoffat[3724]: test message
+</code></p>
+
+<h3>Configure syslog to accept messages via a network socket</h3>
+
+<p>SyslogAppender uses the java.net.Datagram class to send messages to syslog.
+As installed on OS X syslog does not accept messages over network connections so the configuration must be changed.
+For this you have to edit the /System/Library/LaunchDaemons/com.apple.syslogd.plist file.
+This, unfortunately from the point of view of editability, is only writable by root and is in binary not xml format.
+In earlier versions of OS X the format was xml and the required elements were present but commented out, in 10.7 they are not present.
+I had to use the <a href="http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man8/PlistBuddy.8.html">PlistBuddy</a> program supplied by Apple to make the required edits.
+You can see the sequence of commands I used below. The intention is to add a NetworkListener dictionary entry
+with with SockServiceName and SockType properties.</p>
+
+<p>```
+sudo /usr/libexec/PlistBuddy /System/Library/LaunchDaemons/com.apple.syslogd.plist</p>
+
+<p>Command: Print :Sockets
+Dict {</p>
+
+<pre><code>AppleSystemLogger = Dict {
+    SockPathName = /var/run/asl_input
+    SockPathMode = 438
+}
+BSDSystemLogger = Dict {
+    SockPathName = /var/run/syslog
+    SockType = dgram
+    SockPathMode = 438
+}
+</code></pre>
+
+<p>}
+Command: Add :Sockets:NetworkListener dict
+Command: Add :Sockets:NetworkListener:SockServiceName string "syslog"
+Command: Add :Sockets:NetworkListener:SockType string "dgram"
+Command: Print :Sockets
+Dict {</p>
+
+<pre><code>NetworkListener = Dict {
+    SockServiceName = syslog
+    SockType = dgram
+}
+AppleSystemLogger = Dict {
+    SockPathName = /var/run/asl_input
+    SockPathMode = 438
+}
+BSDSystemLogger = Dict {
+    SockPathName = /var/run/syslog
+    SockType = dgram
+    SockPathMode = 438
+}
+</code></pre>
+
+<p>}
+Command: Save
+```</p>
+
+<p>After making the changes above you have to reload the syslog configuration again as you
+did after modifying syslog.conf.</p>
+
+<p><code>
+sudo launchctl unload /System/Library/LaunchDaemons/com.apple.syslogd.plist
+sudo launchctl load /System/Library/LaunchDaemons/com.apple.syslogd.plist
+</code></p>
+
+<h3>Configure the SyslogAppender</h3>
+
+<p>The logback manual has <a href="http://logback.qos.ch/manual/appenders.html#SyslogAppender">information on how to configure the SyslogAppender</a>.
+An appropriate example configuration for my testing is.</p>
+
+<p>```
+  <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender"></p>
+
+<pre><code>&lt;syslogHost&gt;localhost&lt;/syslogHost&gt;
+&lt;facility&gt;LOCAL6&lt;/facility&gt;
+&lt;suffixPattern&gt;%-5level[%thread] %logger{1} - %msg&lt;/suffixPattern&gt;
+</code></pre>
+
+<p>  </appender>
+```</p>
+
+<h3>Test</h3>
+
+<p>Finally, give this a test this by running you app and you should see messages appearing in the
+log file you configured in /etc/syslogd.conf</p>
+
+<h3>Acknowledgements</h3>
+
+<p>I pulled together the information for this post from a number of sources on the web.
+In addition to those linked to in the post the original inspiration and flow is from
+<a href="http://kreskasnotes.blogspot.com/2010/03/fun-with-syslogappender.html">Fun with SyslogAppender</a>,
+information about what needs to be added to the com.apple.syslogd.plist came from
+<a href="http://compgroups.net/comp.sys.mac.system/syslogd-on-10.6-enabling-udp-listening-on/199907">Syslogd on 10.6: enabling UDP listening on 514</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[UIViewController Life Cycle]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/04/08/uiviewcontroller-life-cycle/"/>
+    <updated>2012-04-08T17:03:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/04/08/uiviewcontroller-life-cycle</id>
+    <content type="html"><![CDATA[<p>There are many resources describing the <a href="http://developer.apple.com/library/ios/#featuredarticles/ViewControllerPGforiPhoneOS/ViewLoadingandUnloading/ViewLoadingandUnloading.html">life cycle of a view controller in iOS</a>. This one differs in looking at the order of the the life cycles events of two UIViewControllers embedded in a UINavigationController. The way in which the events on the two controllers are interleaved is interesting.</p>
+
+<p>The main events are</p>
+
+<ul>
+<li>(void)viewWillAppear:(BOOL)animated</li>
+<li>(void)viewDidAppear:(BOOL)animated</li>
+<li>(void)viewWillDisappear:(BOOL)animated</li>
+<li>(void)viewDidDisappear:(BOOL)animated</li>
+</ul>
+
+
+<p>but I've also thrown in the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UINavigationController_Class/Reference/Reference.html">UINavigationControllerDelegate</a> methods and some of the <a href="http://developer.apple.com/library/ios/#documentation/uikit/reference/UITextFieldDelegate_Protocol/UITextFieldDelegate/UITextFieldDelegate.html">UITextFieldDelegate</a> methods.</p>
+
+<!-- more -->
+
+
+<p>The layout of the interface is shown below.</p>
+
+<p><img src="/images/2012-04-08-interface-layout.png" alt="Layout" /></p>
+
+<p>Pressing button B on the first screen A invokes a segue to go to screen B. On B there is a text field. The use case I experimented with was</p>
+
+<ul>
+<li>Start app</li>
+<li>Tap button B</li>
+<li>Tap text field on B screen</li>
+<li>Tap back button in navigation bar without dismissing keyboard first.</li>
+<li>Close app.</li>
+</ul>
+
+
+<p>The sequence of events is shown as the output of NSLog statements I added to the code.</p>
+
+<p><code>text Sequence of life cycle events
+ &lt;A: 0x6c11b10&gt; viewDidLoad
+ &lt;A: 0x6c11b10&gt; viewWillAppear
+ &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;A: 0x6c11b10&gt; viewDidAppear
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;A: 0x6c11b10&gt; prepareForSegue from &lt;A: 0x6c11b10&gt; to &lt;B: 0x6c16980&gt;
+ &lt;B: 0x6c16980&gt; viewDidLoad
+ &lt;A: 0x6c11b10&gt; viewWillDisappear
+ &lt;B: 0x6c16980&gt; viewWillAppear
+ &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;B: 0x6c16980&gt;
+ &lt;A: 0x6c11b10&gt; viewDidDisappear
+ &lt;B: 0x6c16980&gt; viewDidAppear
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;B: 0x6c16980&gt;
+ &lt;B: 0x6c16980&gt; textFieldShouldBeginEditing
+ &lt;B: 0x6c16980&gt; textFieldDidBeginEditing
+ &lt;B: 0x6c16980&gt; viewWillDisappear
+ &lt;A: 0x6c11b10&gt; viewWillAppear
+ &lt;UINavigationController: 0x6c118f0&gt; willShowViewController &lt;A: 0x6c11b10&gt;
+ &lt;B: 0x6c16980&gt; textFieldShouldEndEditing
+ &lt;B: 0x6c16980&gt; textFieldDidEndEditing
+ &lt;B: 0x6c16980&gt; viewDidDisappear
+ &lt;A: 0x6c11b10&gt; viewDidAppear
+ &lt;UINavigationController: 0x6c118f0&gt; didShowViewController &lt;A: 0x6c11b10&gt;
+</code></p>
+
+<p>Notes.</p>
+
+<ul>
+<li>I added A as the UINavigationControllerDelegate in A's viewDidLoad method. Interestingly you see two occurrences of didShowViewController for A, one on line 4 and one on line 6. I think the first one, on line 4 is not correct as A's viewDidAppear method has not yet executed.</li>
+<li>When the button is pressed the first method called is prepareForSegue (line 7). At this point B exists but its view has not yet been loaded. If you're using segues then you're probably going to be calling methods on the controller you're seguing to, remember that that controller has no view when you're doing this.</li>
+<li>The sequence of events on lines 8 through 14 is interesing. First B's view is loaded, then A is told it will disappear. Next, before A actually does disappear B is told it will appear. Then the navigation controller delegate is told that B will be shown and only after that is A told it has disappeared and then B that it has appeared. The point, for me at least, is that you have to think about the interleaving of events as much as the sequence. This becomes clearer when we look at the text editing sequence.</li>
+<li>Starting on line 17 is the sequence of events that happens when you press the back button to return from screen B while the keyboard for the text field is still showing. Notice all of the things that happen before the textFieldDidEndEditing method is called on line 21. If you're using textFieldDidEndEditing to update properties you won't have access to the updated values from the text field till viewDidDisappear. So, given that you have to use B's viewDidDisappear to access text field values if you're updating in B an object passed from A that object won't be updated till A's viewDidAppear method is called. If you use A's viewWillAppear method you'll see the un-updated values.</li>
+</ul>
+
+
+<p>I suppose the larger point is that it's very easy with storyboards to set up this sort of test case to explore when the actual sequence of event is, and it's sometimes not what you expect.</p>
+]]></content>
+  </entry>
+  
+</feed>
