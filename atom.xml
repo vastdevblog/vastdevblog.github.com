@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Vast Blog]]></title>
+  <title><![CDATA[Vast Development Blog]]></title>
   <link href="http://vastdevblog.vast.com/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-07-01T14:15:36-05:00</updated>
+  <updated>2012-07-09T11:27:37-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -12,6 +12,36 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Visualizing Model Search]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search/"/>
+    <updated>2012-07-09T09:37:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search</id>
+    <content type="html"><![CDATA[<p>Model search is a general name for a set of techniques that address the problem of selecting a subset of variables for regression.  See (1) for an in depth discussion of various model search methods, and (2) for guidance on using implementations in R of some of these techniques. Here we are interested in visualizing the variable selection order determined using <a href="http://www-stat.stanford.edu/~tibs/lasso.html">lasso regression</a> as implemented by the <a href="http://www.stanford.edu/~hastie/Papers/LARS/">&#8220;lars&#8221; package in R</a>. The goal is to get a sense of the impact of selecting a variable subset of a particular size, and the impact of decreasing or increasing the number of variables in order as determined by the lasso technique.</p>
+
+<!-- more -->
+
+
+<p>To do this, we first determine a variable ordering using the lasso technique.  With this variable ordering, we then generate the series of linear regression models using all possible prefixes of the variable ordering.  That is, the first model contains the first variable in the ordering, the second model contains the first two variables in the ordering, and so forth.</p>
+
+<p>For each of these models, we collect several &#8220;goodness of fit&#8221; metrics, specifically the <a href="http://en.wikipedia.org/wiki/Akaike_information_criterion">AIC</a>, R-Squared, and the mean absolute error. Below is an example using a data set with 53 variables, plotting the three &#8220;goodness of fit&#8221; metrics for the 53 linear regression models.</p>
+
+<p><img src="http://vastdevblog.vast.com/images/2012-07-09-visualizing-aic.png" alt="AIC" /></p>
+
+<p><img src="http://vastdevblog.vast.com/images/2012-07-09-visualizing-rsq.png" alt="R-Squared" /></p>
+
+<p><img src="http://vastdevblog.vast.com/images/2012-07-09-visualizing-mae.png" alt="Mean Absolute Error" /></p>
+
+<p>The impact in terms of &#8220;goodness of fit&#8221; for adding additional variables to the regression model is easily judged with these graphs. Additional &#8220;goodness of fit&#8221; or other model metrics are easily added.</p>
+
+<p>The example data set used here included categorical variables, but the &#8220;lars&#8221; package as of our usage did not support categorical variables. We generated the appropriate dummy variables and modified the feature vector for each data point in order to apply the lasso technique.  For the variable ordering for the series of linear regression models, each categorical variable was positioned at the first occurrence of a dummy variable associated with the categorical variable.</p>
+
+<p>(1) Miller, Alan (2002), Subset Selection in Regression, Chapman &amp; Hall/CRC, Boca Raton, FL.</p>
+
+<p>(2) Wright, Daniel B. and London, Kamala (2009), Modern Regression Techinques Using R: A Practical Guide for Students and Researchers, SAGE Publications Ltd, London.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Creating named Guice bindings for typesafe Config properties]]></title>

@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: scala - Vast Development Blog</title>
+  <title>Visualizing Model Search - Vast Development Blog</title>
   <meta name="author" content="vast.com">
 
-  <meta name="title" content="Category: scala"/>
+  <meta name="title" content="Visualizing Model Search"/>
   
-  <meta name="description" content="Category: scala">
+  <meta name="description" content="Model search is a general name for a set of techniques that address the problem of selecting a subset of variables for regression. See (1) for an in &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://vastdevblog.vast.comblog/categories/scala/">
+  <link rel="canonical" href="http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -76,77 +76,109 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Scala</h1>
+    
+      <h1 class="entry-title">Visualizing Model Search</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-09T09:37:00-05:00" pubdate data-updated="true">Jul 9<span>th</span>, 2012</time> 
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>Model search is a general name for a set of techniques that address the problem of selecting a subset of variables for regression.  See (1) for an in depth discussion of various model search methods, and (2) for guidance on using implementations in R of some of these techniques. Here we are interested in visualizing the variable selection order determined using <a href="http://www-stat.stanford.edu/~tibs/lasso.html">lasso regression</a> as implemented by the <a href="http://www.stanford.edu/~hastie/Papers/LARS/">&#8220;lars&#8221; package in R</a>. The goal is to get a sense of the impact of selecting a variable subset of a particular size, and the impact of decreasing or increasing the number of variables in order as determined by the lasso technique.</p>
 
-  
-  <h2>2012</h2>
-
-<article>
-  
-<h1><a href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Creating named Guice bindings for typesafe Config properties</a></h1>
-<time datetime="2012-06-16T17:49:00-05:00" pubdate><span class='month'>Jun</span> <span class='day'>16</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/guice/'>guice</a>, <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/typesafe/'>typesafe</a></span>
-</footer>
+<!-- more -->
 
 
-</article>
+<p>To do this, we first determine a variable ordering using the lasso technique.  With this variable ordering, we then generate the series of linear regression models using all possible prefixes of the variable ordering.  That is, the first model contains the first variable in the ordering, the second model contains the first two variables in the ordering, and so forth.</p>
 
+<p>For each of these models, we collect several &#8220;goodness of fit&#8221; metrics, specifically the <a href="http://en.wikipedia.org/wiki/Akaike_information_criterion">AIC</a>, R-Squared, and the mean absolute error. Below is an example using a data set with 53 variables, plotting the three &#8220;goodness of fit&#8221; metrics for the 53 linear regression models.</p>
 
+<p><img src="/images/2012-07-09-visualizing-aic.png" alt="AIC" /></p>
 
-<article>
-  
-<h1><a href="/blog/2012/03/23/handling-dependency-injection-in-scala-test-cases-with-testng/">Handling Dependency Injection in Scala test cases with TestNG</a></h1>
-<time datetime="2012-03-23T15:46:00-05:00" pubdate><span class='month'>Mar</span> <span class='day'>23</span> <span class='year'>2012</span></time>
+<p><img src="/images/2012-07-09-visualizing-rsq.png" alt="R-Squared" /></p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/testng/'>testng</a></span>
-</footer>
+<p><img src="/images/2012-07-09-visualizing-mae.png" alt="Mean Absolute Error" /></p>
 
+<p>The impact in terms of &#8220;goodness of fit&#8221; for adding additional variables to the regression model is easily judged with these graphs. Additional &#8220;goodness of fit&#8221; or other model metrics are easily added.</p>
 
-</article>
+<p>The example data set used here included categorical variables, but the &#8220;lars&#8221; package as of our usage did not support categorical variables. We generated the appropriate dummy variables and modified the feature vector for each data point in order to apply the lasso technique.  For the variable ordering for the series of linear regression models, each categorical variable was positioned at the first occurrence of a dummy variable associated with the categorical variable.</p>
 
+<p>(1) Miller, Alan (2002), Subset Selection in Regression, Chapman &amp; Hall/CRC, Boca Raton, FL.</p>
 
-
-<article>
-  
-<h1><a href="/blog/2012/03/16/using-spring-transaction-support-with-scala/">Using Spring transaction support with Scala</a></h1>
-<time datetime="2012-03-16T14:30:00-05:00" pubdate><span class='month'>Mar</span> <span class='day'>16</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/scala/'>scala</a>, <a class='category' href='/blog/categories/spring/'>spring</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2012/03/10/finagling/">Finagling</a></h1>
-<time datetime="2012-03-10T16:08:00-06:00" pubdate><span class='month'>Mar</span> <span class='day'>10</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/finagle/'>finagle</a>, <a class='category' href='/blog/categories/scala/'>scala</a></span>
-</footer>
-
-
-</article>
-
+<p>(2) Wright, Daniel B. and London, Kamala (2009), Modern Regression Techinques Using R: A Practical Guide for Students and Researchers, SAGE Publications Ltd, London.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">David Franke, Ph.D.</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-09T09:37:00-05:00" pubdate data-updated="true">Jul 9<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/analytics/'>analytics</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search/" data-via="" data-counturl="http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search/" >Tweet</a>
+  
+  
+  <g:plusone size="medium" annotation="bubble" width="200" href="http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search/"></g:plusone>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/" title="Previous Post: Creating named Guice bindings for typesafe Config properties">&laquo; Creating named Guice bindings for typesafe Config properties</a>
+      
+      
+    </p>
+  </footer>
 </article>
 
 </div>

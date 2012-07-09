@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: analytics | Vast Blog]]></title>
+  <title><![CDATA[Category: analytics | Vast Development Blog]]></title>
   <link href="http://vastdevblog.vast.com/blog/categories/analytics/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-07-01T14:15:36-05:00</updated>
+  <updated>2012-07-09T11:27:37-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -14,86 +14,32 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Ranking Apache Pig Tuples with a Python UDF]]></title>
-    <link href="http://vastdevblog.vast.com/blog/2012/04/16/ranking-apache-pig-tuples/"/>
-    <updated>2012-04-16T15:46:00-05:00</updated>
-    <id>http://vastdevblog.vast.com/blog/2012/04/16/ranking-apache-pig-tuples</id>
-    <content type="html"><![CDATA[<p>The <a href="http://pig.apache.org/docs/r0.9.2/basic.html#order-by">ORDER ... BY</a> statement in Pig Latin sorts the <code>tuples</code> in a <code>bag</code>.
-Sometimes it is useful to know the rank of each <code>tuple</code> -- its position in the <code>bag</code> for a given sort order. This post demonstrates a <a href="http://pig.apache.org/docs/r0.9.2/udf.html">user defined function (UDF)</a> written in Python that injects rank into each <code>tuple</code> in a <code>bag</code>.  The code below has been tested on Pig 0.9.2.</p>
+    <title type="html"><![CDATA[Visualizing Model Search]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search/"/>
+    <updated>2012-07-09T09:37:00-05:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2012/07/09/visualizing-model-search</id>
+    <content type="html"><![CDATA[<p>Model search is a general name for a set of techniques that address the problem of selecting a subset of variables for regression.  See (1) for an in depth discussion of various model search methods, and (2) for guidance on using implementations in R of some of these techniques. Here we are interested in visualizing the variable selection order determined using <a href="http://www-stat.stanford.edu/~tibs/lasso.html">lasso regression</a> as implemented by the <a href="http://www.stanford.edu/~hastie/Papers/LARS/">"lars" package in R</a>. The goal is to get a sense of the impact of selecting a variable subset of a particular size, and the impact of decreasing or increasing the number of variables in order as determined by the lasso technique.</p>
 
 <!-- more -->
 
 
-<p>Suppose that we have the following structure in Pig: <code>data: {group: int, record: {(make: chararray, model: chararray, mpg: int)}}</code></p>
+<p>To do this, we first determine a variable ordering using the lasso technique.  With this variable ordering, we then generate the series of linear regression models using all possible prefixes of the variable ordering.  That is, the first model contains the first variable in the ordering, the second model contains the first two variables in the ordering, and so forth.</p>
 
-<p>This Pig script sorts the records in each group in descending order by mpg.  Its output is in the same format as its input.</p>
+<p>For each of these models, we collect several "goodness of fit" metrics, specifically the <a href="http://en.wikipedia.org/wiki/Akaike_information_criterion">AIC</a>, R-Squared, and the mean absolute error. Below is an example using a data set with 53 variables, plotting the three "goodness of fit" metrics for the 53 linear regression models.</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Sorting in Pig </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>data = foreach data {&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>sorted = order record by mpg desc;
-</span><span class='line'>generate group, sorted;
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>};</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p><img src="/images/2012-07-09-visualizing-aic.png" alt="AIC" /></p>
 
-<p>This next Pig script sorts the records in each group by mpg and stores the rank with each record. Its output is formatted as: <code> data: {group: int, record: {(rank:int, make: chararray,model: chararray, mpg: int)}}</code></p>
+<p><img src="/images/2012-07-09-visualizing-rsq.png" alt="R-Squared" /></p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Ranking in Pig with a Python UDF </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>register enumerate_bag.py using jython as eb;&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>data = foreach data {&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>sorted = order record by mpg desc;
-</span><span class='line'>generate group, eb.enumerate_bag(sorted) as record: {(rank: int, make: chararray, model: chararray, mpg: int)};
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>};</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p><img src="/images/2012-07-09-visualizing-mae.png" alt="Mean Absolute Error" /></p>
 
-<p>Line 1 registers the functions in the Python module <code>enumerate_bag</code> as the Pig namespace <code>eb</code>.  Line 5 calls the <code>eb.enumerate_bag</code> UDF to add rank to each <code>tuple</code> in <code>sorted</code>.   Here is the Python source code.</p>
+<p>The impact in terms of "goodness of fit" for adding additional variables to the regression model is easily judged with these graphs. Additional "goodness of fit" or other model metrics are easily added.</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Python UDF to Enumerate Tuples in a Bag -- enumerate_bag.py </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='py'><span class='line'><span class="k">def</span> <span class="nf">enumerate_bag</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'><span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">([</span><span class="n">rank</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
-</span><span class='line'><span class="k">return</span> <span class="n">output</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+<p>The example data set used here included categorical variables, but the "lars" package as of our usage did not support categorical variables. We generated the appropriate dummy variables and modified the feature vector for each data point in order to apply the lasso technique.  For the variable ordering for the series of linear regression models, each categorical variable was positioned at the first occurrence of a dummy variable associated with the categorical variable.</p>
 
-<p>Pig passes a <code>bag</code> to a Python UDF as a <code>list</code> of <code>tuple</code>.  Line 3 uses the Python builtin <code>enumerate</code> to get the rank and value for each <code>tuple</code> in <code>input</code>.  Each Python <code>tuple</code> is immutable, so line 4 of the function using <code>list</code> concatenation to create a new <code>tuple</code> containing the rank followed by the elements of the original <code>tuple</code>.  The function returns a <code>list</code> of these new <code>tuple</code>s, and Pig maps that result back to a <code>bag</code>.</p>
+<p>(1) Miller, Alan (2002), Subset Selection in Regression, Chapman &amp; Hall/CRC, Boca Raton, FL.</p>
 
-<p>Although Pig provides a way for a Python UDF to <a href="http://pig.apache.org/docs/r0.9.2/udf.html#decorators">specify its return type</a> we have chosen not to do so.  The <code>outputSchema</code> decorator is too restrictive.  We want our UDF to be able to inject rank into any tuple.  The Pig documentation says the <code>outputFunctionSchema</code> decorator can be used to write a UDF that can accept multiple input types; however, constructing the corresponding <code>schemaFunction</code> is non-trivial.  Because the return type is not specified, Pig treats the result as <code>bytearray</code> and we specify its structure on line 5 of the Pig script.</p>
-
-<p>In this blog post we discussed the relationship between sorting and ranking.   Pig has native support for sorting via the <code>ORDER ... BY</code> command.  We provided a Python UDF that adds ranking to a sorted bag.</p>
+<p>(2) Wright, Daniel B. and London, Kamala (2009), Modern Regression Techinques Using R: A Practical Guide for Students and Researchers, SAGE Publications Ltd, London.</p>
 ]]></content>
   </entry>
   

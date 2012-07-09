@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Vast Blog</title>
+  <title>Vast Development Blog</title>
   <meta name="author" content="vast.com">
 
   <meta name="title" content=""/>
   
-  <meta name="description" content="Guice provides an @Named annotation so that you can distinguish multiple bindings which have the same type. A canonical example is string or numeric &hellip;">
+  <meta name="description" content="Model search is a general name for a set of techniques that address the problem of selecting a subset of variables for regression. See (1) for an in &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -25,7 +25,7 @@
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="/javascripts/ender.js"></script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="Vast Blog" type="application/atom+xml">
+  <link href="/atom.xml" rel="alternate" title="Vast Development Blog" type="application/atom+xml">
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -48,9 +48,9 @@
 
 <body   >
   <header role="banner"><hgroup>
-  <h1><a href="/">Vast Blog</a></h1>
+  <h1><a href="/">Vast Development Blog</a></h1>
   
-    <h2>The vast.com analytics and development blog.</h2>
+    <h2>The vast.com development blog.</h2>
   
 </hgroup>
 
@@ -68,9 +68,7 @@
 </form>
   
 <ul class="main-navigation">
-  <li><a href="/">Home</a></li>
-  <li><a href="/blog/categories/analytics">Analytics</a></li>
-  <li><a href="/blog/categories/development">Development</a></li>
+  <li><a href="/">Blog</a></li>
   <li><a href="/blog/archives">Archives</a></li>
 </ul>
 
@@ -79,6 +77,51 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/07/09/visualizing-model-search/">Visualizing Model Search</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-07-09T09:37:00-05:00" pubdate data-updated="true">Jul 9<span>th</span>, 2012</time>  &bull; 
+  
+
+<span class="byline author vcard">Posted by <span class="fn">David Franke, Ph.D.</span></span>
+ 
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Model search is a general name for a set of techniques that address the problem of selecting a subset of variables for regression.  See (1) for an in depth discussion of various model search methods, and (2) for guidance on using implementations in R of some of these techniques. Here we are interested in visualizing the variable selection order determined using <a href="http://www-stat.stanford.edu/~tibs/lasso.html">lasso regression</a> as implemented by the <a href="http://www.stanford.edu/~hastie/Papers/LARS/">&#8220;lars&#8221; package in R</a>. The goal is to get a sense of the impact of selecting a variable subset of a particular size, and the impact of decreasing or increasing the number of variables in order as determined by the lasso technique.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/07/09/visualizing-model-search/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -573,60 +616,6 @@ The two interesting points are</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/03/10/finagling/">Finagling</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-03-10T16:08:00-06:00" pubdate data-updated="true">Mar 10<span>th</span>, 2012</time>  &bull; 
-  
-
-<span class="byline author vcard">Posted by <span class="fn">Alex Moffat <alex.moffat@gmail.com></span></span>
- 
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I&#8217;ve been playing with <a href="http://twitter.github.com/finagle/">Finagle</a>, or &#8220;Finagle, from Twitter&#8221; as the site refers to it, to see whether it will work for me as a framework to support a simple http rpc/rest server. The Finagle documentation is good but I wanted to explore in a complete simple example how I could implement</p>
-
-<ul>
-<li>Catching execptions from underlying services and returning 500 response codes to clients.</li>
-<li>Returning a timeout response if the underlying service takes too long to respone.</li>
-<li>Separating common process, such as extracting values from headers, from more specific service handling.</li>
-<li>Mapping from urls to services.</li>
-<li>Executing service code on a separate thread from the request processing thread.</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/03/10/finagling/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -642,6 +631,10 @@ The two interesting points are</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2012/07/09/visualizing-model-search/">Visualizing Model Search</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Creating named Guice bindings for typesafe Config properties</a>
       </li>
     
@@ -655,10 +648,6 @@ The two interesting points are</p>
     
       <li class="post">
         <a href="/blog/2012/04/18/using-syslogappender-on-os-x/">Using SyslogAppender on OS X</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/04/16/ranking-apache-pig-tuples/">Ranking Apache Pig Tuples with a Python UDF</a>
       </li>
     
   </ul>
