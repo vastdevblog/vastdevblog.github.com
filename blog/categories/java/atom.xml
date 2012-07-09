@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: java | Vast Development Blog]]></title>
+  <title><![CDATA[Category: java | Vast Blog]]></title>
   <link href="http://vastdevblog.vast.com/blog/categories/java/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-07-09T11:27:37-05:00</updated>
+  <updated>2012-07-09T11:51:47-05:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
