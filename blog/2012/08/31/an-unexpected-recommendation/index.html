@@ -1,0 +1,282 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>An Unexpected Recommendation - Vast Blog</title>
+  <meta name="author" content="vast.com">
+
+  <meta name="title" content="An Unexpected Recommendation"/>
+  
+  <meta name="description" content="One of the most famous examples of big data analytics in e-commerce is Amazon&#8217;s personalized recommendations. During a recent amazon session, I &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://vastdevblog.vast.com/blog/2012/08/31/an-unexpected-recommendation/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Vast Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30412900-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Vast Blog</a></h1>
+  
+    <h2>The vast.com analytics and development blog.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:vastdevblog.vast.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Home</a></li>
+  <li><a href="/blog/categories/analytics">Analytics</a></li>
+  <li><a href="/blog/categories/development">Development</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">An Unexpected Recommendation</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-08-31T15:46:00-05:00" pubdate data-updated="true">Aug 31<span>st</span>, 2012</time> 
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>One of the most famous examples of big data analytics in e-commerce is Amazon&#8217;s personalized recommendations.  During a recent amazon session, I was surprised to see a set of recommendations that were entirely uninteresting to me.   In this blog post I speculate about why the poor recommendations surfaced, and I propose additional features that could have steered the recommender towards products I would be more likely to purchase.</p>
+
+<!-- more -->
+
+
+<p>Amazon&#8217;s item-based collaborative filtering algorithms (1) infer the similarity between two products, <em>X</em> and <em>Y</em>, from the set of consumers who purchased <em>X</em> and those who bought <em>Y</em>.  I recently purchased a handlebar basket to add to my bicycle.  I was expecting to see recommendations for other inexpensive bicycle accessories like bells and water-bottle cages.  Instead all of the recommendations were related to an ambulation aid called a <em>knee walker</em>.</p>
+
+<p>The recommendations, shown in the screen-shots below are split into three categories: <em>Frequently Bought Together</em>, <em>Customers Who Bought This Item Also Bought</em>, and <em>Related Items</em>.</p>
+
+<p><img src="/images/2012-08-31-bike-basket-fbt.png" alt="Frequently Bought Together" /></p>
+
+<p><em>Frequently Bought Together</em> items are presumably products that are bought together during a single shopping session.  It is not surprising to see baskets and knee walkers purchased together.  After all, the basket + knee walker combination allows one who walks with the aid of a knee walker to carry stuff in their basket while using their hands to balance on the walker.  While I think a basket is a terrific product to recommend to purchasers of knee walkers, I think a knee walker is not a compelling product to recommend to purchasers of baskets for the following reasons:</p>
+
+<ol>
+<li>There is a temporal ordering problem.  Even among consumers who purchase both a knee walker and basket, I would assume the typical workflow is to first find a knee walker that satisfies some set of requirements (price, rating, availability, etc.) and then to choose a basket that fits it.   It is hard to imagine a consumer in need of both products choosing to address the basket problem first.</li>
+<li>There is a price mismatch.   It is easy to imagine a $20 basket being an impulse purchase for a knee-walker buyer, or to imagine a customer who wants both items forgetting to add the basket to their (virtual) cart.  In both of these settings, recommending baskets to buyers of knee walkers is probably quite profitable for Amazon.   Conversely, it is hard to imagine adding a $200 knee walker as an impulse purchase to complement a $20 basket.  The only way I can imagine this working is if the consumer just purchased a knee walker elsewhere because they didn&#8217;t know knee walkers were available from Amazon.  After seeing the knee walker recommendation on the basket page they might choose to cancel the other order and purchase the combination from Amazon.   I have no access to data that would support or refute this, but my intuition is that cheaper products, even knee walker accessories like pads and leg protectors, would be more profitable recommendations than actual knee walkers.</li>
+</ol>
+
+
+<p><img src="/images/2012-08-31-bike-basket-also.png" alt="Bought This Bought That" /></p>
+
+<p><em>Customers Who Bought This Item Also Bought</em> recommendations are presumably products that are bought by the same customers, although possibly spread across multiple shopping sessions.  Again I object to recommending knee walkers to purchasers of baskets, because of time ordering &#8211; if a customer will eventually own both a basket and a knee walker, they were more likely to have purchased the knee walker and realized they needed a way to carry items, than to have purchased the basket and then realized they had no base upon which to attach it; and because of price &#8211; the knee walker is so much more expensive than the basket.</p>
+
+<p><img src="/images/2012-08-31-bike-basket-related.png" alt="Related" /></p>
+
+<p><em>Related Items</em> are interesting because these recommendations are clustered by item type.   I like these better because several biking clusters are exposed, but again I&#8217;m surprised to see walkers dominating the <em>Most Popular</em> category, and to see <em>Mobility Aids &amp; Equipment</em> listed before the various bike accessories.</p>
+
+<p>In conclusion, I was surprised when Amazon recommended that I purchase a knee walker to go with my new basket.  I speculate that item-based collaborative filters that were aware of temporal ordering of purchases and price differences between the items could have created recommendations that were more useful for me and more profitable for Amazon.</p>
+
+<p>(1) Greg Linden, Brent Smith, Jeremy York, Amazon.com Recommendations: Item-to-Item Collaborative Filtering, IEEE Internet Computing, v.7 n.1, p. 76-80, January 2003</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Josh Levy, Ph.D.</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-08-31T15:46:00-05:00" pubdate data-updated="true">Aug 31<span>st</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/analytics/'>analytics</a>, <a class='category' href='/blog/categories/bicycles/'>bicycles</a>, <a class='category' href='/blog/categories/recommendations/'>recommendations</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://vastdevblog.vast.com/blog/2012/08/31/an-unexpected-recommendation/" data-via="" data-counturl="http://vastdevblog.vast.com/blog/2012/08/31/an-unexpected-recommendation/" >Tweet</a>
+  
+  
+  <g:plusone size="medium" annotation="bubble" width="200" href="http://vastdevblog.vast.com/blog/2012/08/31/an-unexpected-recommendation/"></g:plusone>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/07/09/visualizing-model-search/" title="Previous Post: Visualizing Model Search">&laquo; Visualizing Model Search</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/08/31/an-unexpected-recommendation/">An Unexpected Recommendation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/07/09/visualizing-model-search/">Visualizing Model Search</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/06/16/creating-named-guice-bindings-for-typesafe-config-properties/">Creating named Guice bindings for typesafe Config properties</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/14/generating-unique-junit-test-names-with-testng-data-providers/">Generating Unique JUnit Test Names with TestNG Data Providers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/06/parseerror-premature-eof-java-webservices-client/">ParseError - Premature EOF - Java WebServices Client</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - vast.com -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
