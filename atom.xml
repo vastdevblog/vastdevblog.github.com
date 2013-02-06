@@ -4,7 +4,7 @@
   <title><![CDATA[Vast Blog]]></title>
   <link href="http://vastdevblog.vast.com/atom.xml" rel="self"/>
   <link href="http://vastdevblog.vast.com/"/>
-  <updated>2012-09-03T20:34:10-05:00</updated>
+  <updated>2013-02-05T20:05:00-06:00</updated>
   <id>http://vastdevblog.vast.com/</id>
   <author>
     <name><![CDATA[vast.com]]></name>
@@ -12,6 +12,32 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Super Bowl and Anti-Super Bowl]]></title>
+    <link href="http://vastdevblog.vast.com/blog/2013/02/04/super-sunday-traffic/"/>
+    <updated>2013-02-04T11:08:00-06:00</updated>
+    <id>http://vastdevblog.vast.com/blog/2013/02/04/super-sunday-traffic</id>
+    <content type="html"><![CDATA[<p>More than 100,000,000 people tuned in to watch Super Bowl XLVII.   In this blog post we will look at how web traffic to a Vast powered automotive marketplace was affected by the Super Bowl and by a power outage that disrupted the Super Bowl for roughly 30 minutes.</p>
+
+<!-- more -->
+
+
+<p>On February 5, 2012, the day of Super Bowl XLVI, Vast observed an interesting pattern in our web traffic.  In the early part of the day, traffic was significantly higher than Sunday traffic in January of that year.  As might be expected, as pre-game festivities ramped up, our traffic from traditional computers (desktops and laptops) plummeted.  Traffic from iPhones remained high as car shoppers chose to watch the game and surf on their phones simultaneously.  Traffic from iPads trended near its historical average.  After the game, traffic from traditional computers rose above the historical trend again.</p>
+
+<p><img src="http://vastdevblog.vast.com/images/2013-02-04-superbowl-2012.png" alt="2012 Superbowl Traffic" /></p>
+
+<p>The 2012 traffic pattern can be seen in the graph above.  Historical ranges are drawn as shaded areas with a dashed line indicating average trend.  Super Bowl Sunday traffic is shown with solid lines, and an approximate time window for the Super Bowl is highlighted.</p>
+
+<p>As Super Bowl XLVII approached, we hypothesized that we would see a similar pattern in our traffic on Sunday, February 3, 2013.  Of course, we failed to anticipate the <em>Anti-Super Bowl</em>: a half hour disruption of the game, due to a power outage at the Superdome.</p>
+
+<p>In the 2013 graph, we observe high traffic in the early part of the day that falls off before the game starts.  A substantial amount of traffic returns during the power outage. The steep rise of the graph before the power failure is an artifact of the hourly buckets we used to produce the graph.  Traffic drops again when the game resumes and again rises above the historical average after the game ends.</p>
+
+<p><img src="http://vastdevblog.vast.com/images/2013-02-04-superbowl-2013.png" alt="2013 Superbowl Traffic" /></p>
+
+<p>In hindsight, these results are fairly obvious.  The Super Bowl draws the attention of 100,000,000 people.  Those people don&#8217;t get much practical work done during the game, unless they use devices like iPhones.   The blackout on Sunday was an anomaly that functioned as an Anti-Super Bowl giving millions of people an unexpected opportunity to get stuff done.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[An Unexpected Recommendation]]></title>
@@ -115,7 +141,7 @@
 
 <p>The comments at the top of the file explain how it all works. Just one important thing to note, you need to have the Named bindings available before they are used. In guice you don&#8217;t have explicit control over the order in which values are bound so you&#8217;ll need to use the ConfigBinder at the top of a configure method and place the module you use it in at the end of the list of modules you use to create your injector.</p>
 
-<div><script src='https://gist.github.com/2946244.js?file='></script>
+<div><script src='https://gist.github.com/2946244.js'></script>
 <noscript><pre><code>/**
  * Copyright (c) 2012, Vast
  * All rights reserved.
